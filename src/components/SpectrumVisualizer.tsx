@@ -1,0 +1,373 @@
+import { useEffect, useRef } from "react";
+import { useRadio } from "@/context/RadioContext";
+
+export type VisualizationMode =
+  | "bars"
+  | "waves"
+  | "circles"
+  | "ovals"
+  | "particles"
+  | "kaleidoscope";
+
+interface Props {
+  className?: string;
+  intensity?: number;
+  mode?: VisualizationMode;
+}
+
+type Particle = {
+  angle: number;
+  distance: number;
+  speed: number;
+  size: number;
+  hue: number;
+};
+
+const CYAN = "0, 229, 255";
+const MAGENTA = "255, 0, 170";
+
+const SpectrumVisualizer = ({ className, intensity = 1, mode = "bars" }: Props) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const rafRef = useRef<number>();
+  const { analyser, isPlaying } = useRadio();
+  const phaseRef = useRef(0);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const frequencyData = analyser ? new Uint8Array(analyser.frequencyBinCount) : null;
+    const timeData = analyser ? new Uint8Array(analyser.fftSize) : null;
+    const particles = createParticles(100);
+
+    const resize = () => {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = canvas.clientWidth * dpr;
+      canvas.height = canvas.clientHeight * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    };
+    resize();
+    window.addEventListener("resize", resize);
+
+    const draw = () => {
+      const w = canvas.clientWidth;
+      const h = canvas.clientHeight;
+      phaseRef.current += isPlaying ? 0.018 : 0.008;
+      ctx.clearRect(0, 0, w, h);
+      ctx.globalAlpha = 1;
+      ctx.shadowBlur = 0;
+
+      const frequency = readFrequency(analyser, frequencyData, phaseRef.current, isPlaying);
+      const waveform = readWaveform(analyser, timeData, phaseRef.current, isPlaying);
+
+      switch (mode) {
+        case "waves":
+          drawWaves(ctx, w, h, waveform, frequency, intensity);
+          break;
+        case "circles":
+          drawCircles(ctx, w, h, frequency, phaseRef.current, intensity);
+          break;
+        case "ovals":
+          drawOvals(ctx, w, h, frequency, phaseRef.current, intensity);
+          break;
+        case "particles":
+          drawParticles(ctx, w, h, particles, frequency, phaseRef.current, isPlaying, intensity);
+          break;
+        case "kaleidoscope":
+          drawKaleidoscope(ctx, w, h, frequency, phaseRef.current, intensity);
+          break;
+        default:
+          drawBars(ctx, w, h, frequency, intensity);
+      }
+
+      rafRef.current = requestAnimationFrame(draw);
+    };
+    draw();
+
+    return () => {
+      window.removeEventListener("resize", resize);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, [analyser, isPlaying, intensity, mode]);
+
+  return <canvas ref={canvasRef} className={className} aria-hidden="true" />;
+};
+
+function readFrequency(
+  analyser: AnalyserNode | null,
+  target: Uint8Array | null,
+  phase: number,
+  isPlaying: boolean,
+) {
+  const values = new Array<number>(128);
+  if (analyser && target) {
+    analyser.getByteFrequencyData(target);
+    for (let i = 0; i < values.length; i++) {
+      const live = target[Math.min(i, target.length - 1)] / 255;
+      const idle = 0.08 + ((Math.sin(phase * 3 + i * 0.28) + 1) / 2) * 0.06;
+      values[i] = isPlaying ? live : Math.max(live * 0.35, idle);
+    }
+    return values;
+  }
+
+  for (let i = 0; i < values.length; i++) {
+    values[i] = 0.08 + ((Math.sin(phase * 3 + i * 0.28) + 1) / 2) * 0.1;
+  }
+  return values;
+}
+
+function readWaveform(
+  analyser: AnalyserNode | null,
+  target: Uint8Array | null,
+  phase: number,
+  isPlaying: boolean,
+) {
+  const values = new Array<number>(128);
+  if (analyser && target && isPlaying) {
+    analyser.getByteTimeDomainData(target);
+    const step = target.length / values.length;
+    for (let i = 0; i < values.length; i++) {
+      values[i] = (target[Math.floor(i * step)] - 128) / 128;
+    }
+    return values;
+  }
+
+  for (let i = 0; i < values.length; i++) {
+    values[i] = Math.sin(i * 0.2 + phase * 4) * 0.12;
+  }
+  return values;
+}
+
+function drawBars(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  data: number[],
+  intensity: number,
+) {
+  const barCount = 72;
+  const gap = 3;
+  const barWidth = Math.max(1, (w - gap * (barCount - 1)) / barCount);
+
+  for (let i = 0; i < barCount; i++) {
+    const value = data[Math.floor((i / barCount) * data.length)] * intensity;
+    const barH = Math.max(4, value * h * 0.95);
+    const x = i * (barWidth + gap);
+    const y = (h - barH) / 2;
+    const t = i / barCount;
+    const grad = ctx.createLinearGradient(0, y, 0, y + barH);
+    grad.addColorStop(0, `rgba(${Math.round(t * 255)},${255 - Math.round(t * 255)},${Math.round(255 - t * 75)},0.95)`);
+    grad.addColorStop(1, `rgba(255,0,${Math.round(255 - t * 100)},0.95)`);
+    ctx.shadowColor = i % 2 === 0 ? `rgba(${CYAN}, 0.7)` : `rgba(${MAGENTA}, 0.7)`;
+    ctx.shadowBlur = 12;
+    ctx.fillStyle = grad;
+    roundRect(ctx, x, y, barWidth, barH, 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 0.15;
+    ctx.fillRect(x, h / 2 + barH / 2 + 4, barWidth, Math.min(20, barH * 0.4));
+    ctx.globalAlpha = 1;
+  }
+}
+
+function drawWaves(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  waveform: number[],
+  frequency: number[],
+  intensity: number,
+) {
+  const energy = average(frequency, 0, 36);
+  const colors = [CYAN, MAGENTA, "151, 71, 255", CYAN];
+  for (let line = 0; line < 4; line++) {
+    ctx.beginPath();
+    for (let i = 0; i < waveform.length; i++) {
+      const x = (i / (waveform.length - 1)) * w;
+      const offset = Math.sin(i * 0.1 + line * 1.7) * energy * 25;
+      const y = h / 2 + waveform[i] * h * (0.24 + line * 0.035) * intensity + offset;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.strokeStyle = `rgba(${colors[line]}, ${0.9 - line * 0.14})`;
+    ctx.lineWidth = 2.8 - line * 0.4;
+    ctx.shadowColor = `rgba(${colors[line]}, 0.85)`;
+    ctx.shadowBlur = 18;
+    ctx.stroke();
+  }
+}
+
+function drawCircles(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  data: number[],
+  phase: number,
+  intensity: number,
+) {
+  const cx = w / 2;
+  const cy = h / 2;
+  const bass = average(data, 0, 16);
+  const maxRadius = Math.min(w, h) * 0.42;
+
+  for (let ring = 0; ring < 8; ring++) {
+    const localEnergy = average(data, ring * 5, ring * 5 + 12);
+    const pulse = Math.sin(phase * 4 - ring * 0.55) * 8;
+    const radius = 35 + ring * (maxRadius / 9) + pulse + localEnergy * 80 * intensity + bass * 30;
+    ctx.beginPath();
+    ctx.arc(cx, cy, Math.max(8, radius), 0, Math.PI * 2);
+    const color = ring % 2 === 0 ? CYAN : MAGENTA;
+    ctx.strokeStyle = `rgba(${color}, ${0.72 - ring * 0.055})`;
+    ctx.lineWidth = 1.5 + localEnergy * 4;
+    ctx.shadowColor = `rgba(${color}, 0.8)`;
+    ctx.shadowBlur = 18;
+    ctx.stroke();
+  }
+}
+
+function drawOvals(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  data: number[],
+  phase: number,
+  intensity: number,
+) {
+  const cx = w / 2;
+  const cy = h / 2;
+  const max = Math.min(w, h);
+
+  for (let ring = 0; ring < 10; ring++) {
+    const energy = average(data, ring * 6, ring * 6 + 14);
+    const base = 28 + ring * max * 0.038;
+    const rotation = phase * (ring % 2 === 0 ? 0.25 : -0.18) + ring * 0.13;
+    const radiusX = base * (1.45 + energy * intensity);
+    const radiusY = base * (0.48 + energy * 0.75 * intensity);
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, radiusX, radiusY, rotation, 0, Math.PI * 2);
+    const color = ring % 3 === 0 ? MAGENTA : CYAN;
+    ctx.strokeStyle = `rgba(${color}, ${0.76 - ring * 0.052})`;
+    ctx.lineWidth = 1.2 + energy * 3;
+    ctx.shadowColor = `rgba(${color}, 0.75)`;
+    ctx.shadowBlur = 14;
+    ctx.stroke();
+  }
+}
+
+function createParticles(count: number): Particle[] {
+  return Array.from({ length: count }, (_, i) => ({
+    angle: (i / count) * Math.PI * 2 + Math.random() * 0.2,
+    distance: Math.random(),
+    speed: 0.0015 + Math.random() * 0.004,
+    size: 1 + Math.random() * 2.5,
+    hue: Math.random() > 0.5 ? 187 : 320,
+  }));
+}
+
+function drawParticles(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  particles: Particle[],
+  data: number[],
+  phase: number,
+  isPlaying: boolean,
+  intensity: number,
+) {
+  const cx = w / 2;
+  const cy = h / 2;
+  const maxDistance = Math.hypot(w, h) * 0.55;
+  const bass = average(data, 0, 18);
+
+  for (let i = 0; i < particles.length; i++) {
+    const particle = particles[i];
+    const energy = data[i % data.length];
+    particle.distance += particle.speed * (isPlaying ? 1 + bass * 8 : 0.3);
+    particle.angle += 0.0015 + energy * 0.005;
+    if (particle.distance > 1) {
+      particle.distance = Math.random() * 0.08;
+      particle.angle = Math.random() * Math.PI * 2;
+    }
+    const burst = particle.distance * maxDistance * (0.35 + bass * intensity);
+    const wobble = Math.sin(phase * 5 + i) * energy * 24;
+    const x = cx + Math.cos(particle.angle) * (burst + wobble);
+    const y = cy + Math.sin(particle.angle) * (burst + wobble);
+    const radius = particle.size + energy * 7 * intensity;
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
+    ctx.fillStyle = `hsla(${particle.hue}, 100%, 58%, ${0.3 + energy * 0.7})`;
+    ctx.shadowColor = `hsla(${particle.hue}, 100%, 55%, 0.9)`;
+    ctx.shadowBlur = 10 + energy * 22;
+    ctx.fill();
+  }
+}
+
+function drawKaleidoscope(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  data: number[],
+  phase: number,
+  intensity: number,
+) {
+  const cx = w / 2;
+  const cy = h / 2;
+  const slices = 12;
+  const maxRadius = Math.min(w, h) * 0.44;
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(phase * 0.12);
+
+  for (let slice = 0; slice < slices; slice++) {
+    ctx.save();
+    ctx.rotate((slice / slices) * Math.PI * 2);
+    if (slice % 2) ctx.scale(1, -1);
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    for (let point = 0; point < 22; point++) {
+      const energy = data[(point * 3 + slice) % data.length];
+      const radius = (point / 21) * maxRadius;
+      const angle = Math.sin(phase * 2 + point * 0.55) * 0.14 + energy * 0.3 * intensity;
+      ctx.lineTo(Math.cos(angle) * radius, Math.sin(angle) * radius);
+    }
+    const color = slice % 2 === 0 ? CYAN : MAGENTA;
+    ctx.strokeStyle = `rgba(${color}, 0.7)`;
+    ctx.lineWidth = 1.1 + average(data, 0, 24) * 2.5;
+    ctx.shadowColor = `rgba(${color}, 0.85)`;
+    ctx.shadowBlur = 14;
+    ctx.stroke();
+
+    for (let node = 4; node < 22; node += 5) {
+      const energy = data[(node * 3 + slice) % data.length];
+      const radius = (node / 21) * maxRadius;
+      ctx.beginPath();
+      ctx.arc(radius, Math.sin(phase + node) * radius * 0.12, 2 + energy * 6, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${color}, ${0.35 + energy * 0.6})`;
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
+function average(values: number[], start: number, end: number) {
+  const safeEnd = Math.min(end, values.length);
+  let total = 0;
+  for (let i = start; i < safeEnd; i++) total += values[i];
+  return total / Math.max(1, safeEnd - start);
+}
+
+function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  const rr = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + rr, y);
+  ctx.arcTo(x + w, y, x + w, y + h, rr);
+  ctx.arcTo(x + w, y + h, x, y + h, rr);
+  ctx.arcTo(x, y + h, x, y, rr);
+  ctx.arcTo(x, y, x + w, y, rr);
+  ctx.closePath();
+}
+
+export default SpectrumVisualizer;

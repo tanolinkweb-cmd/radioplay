@@ -1,0 +1,53 @@
+import { Music2 } from "lucide-react";
+
+const About = () => {
+  return (
+    <section id="banda" className="relative py-28 sm:py-36">
+      <div className="container max-w-5xl">
+        <div className="grid gap-12 md:grid-cols-2 md:items-center">
+          <div className="relative">
+            <div className="absolute -inset-6 rounded-3xl bg-gradient-to-br from-neon-magenta/20 to-neon-cyan/20 blur-2xl" />
+            <div className="relative overflow-hidden rounded-3xl border border-neon-cyan/20 bg-card/60 p-10 backdrop-blur">
+              <div className="flex flex-wrap gap-2 text-[10px] uppercase tracking-widest text-neon-cyan">
+                <span className="rounded-full border border-neon-cyan/40 px-3 py-1">Rock</span>
+                <span className="rounded-full border border-neon-magenta/40 px-3 py-1 text-neon-magenta">Hard</span>
+                <span className="rounded-full border border-foreground/20 px-3 py-1 text-muted-foreground">Garage</span>
+              </div>
+              <p className="mt-8 font-display text-5xl leading-none text-gradient-neon">220V</p>
+              <p className="mt-2 text-sm text-muted-foreground">de pura energia em cada acorde</p>
+            </div>
+          </div>
+
+          <div>
+            <div className="mb-4 inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-neon-magenta">
+              <Music2 className="h-3 w-3" /> Sobre a banda
+            </div>
+            <h2 className="font-display text-5xl leading-none sm:text-6xl">
+              Uma <span className="text-gradient-neon">tonelada</span> de barulho.
+            </h2>
+            <p className="mt-6 text-base leading-relaxed text-muted-foreground">
+              A Tonelada Elétrica nasceu nas garagens, cresceu nos bares e hoje detona em palcos
+              pelo país. Riffs cortantes, baterias pesadas e atitude que não pede licença.
+              Aqui, o rock'n'roll é servido em alta voltagem.
+            </p>
+
+            <dl className="mt-10 grid grid-cols-3 gap-4 text-center">
+              {[
+                { k: "12", v: "Anos de estrada" },
+                { k: "+200", v: "Shows tocados" },
+                { k: "3", v: "Álbuns" },
+              ].map((s) => (
+                <div key={s.v} className="rounded-2xl border border-border bg-card/50 p-5 backdrop-blur transition-colors hover:border-neon-cyan/40">
+                  <dt className="font-display text-3xl text-gradient-neon">{s.k}</dt>
+                  <dd className="mt-1 text-[10px] uppercase tracking-widest text-muted-foreground">{s.v}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+export default About;

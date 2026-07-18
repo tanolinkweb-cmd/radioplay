@@ -1,0 +1,123 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rubik:wght@400;500;700;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 240 14% 5%;
+    --foreground: 0 0% 98%;
+
+    --card: 240 12% 8%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 240 12% 8%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 320 100% 55%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 187 100% 50%;
+    --secondary-foreground: 240 14% 5%;
+
+    --muted: 240 10% 14%;
+    --muted-foreground: 240 5% 65%;
+
+    --accent: 187 100% 50%;
+    --accent-foreground: 240 14% 5%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 240 10% 18%;
+    --input: 240 10% 14%;
+    --ring: 320 100% 55%;
+
+    --radius: 0.75rem;
+
+    --neon-cyan: 187 100% 50%;
+    --neon-magenta: 320 100% 55%;
+    --neon-violet: 270 100% 65%;
+
+    --gradient-neon: linear-gradient(135deg, hsl(var(--neon-cyan)), hsl(var(--neon-magenta)));
+    --gradient-radial: radial-gradient(circle at 50% 20%, hsl(var(--neon-magenta) / 0.25), transparent 60%);
+    --shadow-neon-cyan: 0 0 20px hsl(var(--neon-cyan) / 0.6), 0 0 60px hsl(var(--neon-cyan) / 0.3);
+    --shadow-neon-magenta: 0 0 20px hsl(var(--neon-magenta) / 0.7), 0 0 60px hsl(var(--neon-magenta) / 0.4);
+    --shadow-glow: 0 10px 40px -10px hsl(var(--neon-magenta) / 0.5);
+
+    --transition-smooth: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-background text-foreground font-body antialiased;
+    background-image:
+      radial-gradient(ellipse at top, hsl(var(--neon-magenta) / 0.12), transparent 55%),
+      radial-gradient(ellipse at bottom right, hsl(var(--neon-cyan) / 0.08), transparent 50%);
+    background-attachment: fixed;
+  }
+  h1, h2, h3, h4 {
+    @apply font-display tracking-wide;
+  }
+}
+
+@layer utilities {
+  .text-neon-cyan { color: hsl(var(--neon-cyan)); }
+  .text-neon-magenta { color: hsl(var(--neon-magenta)); }
+  .text-gradient-neon {
+    background: var(--gradient-neon);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .glow-cyan { box-shadow: var(--shadow-neon-cyan); }
+  .glow-magenta { box-shadow: var(--shadow-neon-magenta); }
+  .border-neon {
+    border: 1px solid hsl(var(--neon-cyan) / 0.4);
+  }
+  .scanlines::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent 2px,
+      hsl(0 0% 0% / 0.15) 3px,
+      transparent 4px
+    );
+    mix-blend-mode: overlay;
+  }
+}
+
+@keyframes flicker {
+  0%, 100% { opacity: 1; }
+  45% { opacity: 1; }
+  50% { opacity: 0.78; }
+  55% { opacity: 1; }
+}
+@keyframes pulse-neon {
+  0%, 100% { box-shadow: 0 0 20px hsl(var(--neon-magenta) / 0.6); }
+  50% { box-shadow: 0 0 40px hsl(var(--neon-magenta) / 0.9), 0 0 80px hsl(var(--neon-cyan) / 0.4); }
+}
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+@keyframes equalize {
+  0%, 100% { transform: scaleY(0.4); }
+  50% { transform: scaleY(1); }
+}
