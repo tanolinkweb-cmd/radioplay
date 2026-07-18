@@ -6,54 +6,41 @@ export type Track = {
   src: string;
 };
 
-// Faixas oficiais em /public/music (mesma origem = sem CORS).
-const DEMO_TRACKS: Track[] = [
-  {
-    title: "Alucinação (Cover 2025)",
-    artist: "Tonelada Elétrica",
-    src: `${import.meta.env.BASE_URL}music/Alucinacao_cover_2025.mp3`,
-  },
-  {
-    title: "Atak 2026 (Extend)",
-    artist: "Tonelada Elétrica",
-    src: `${import.meta.env.BASE_URL}music/Atak_2026_Extend_1.mp3`,
-  },
-  {
-    title: "Ataque Tonelada (Onbeat)",
-    artist: "Tonelada Elétrica",
-    src: `${import.meta.env.BASE_URL}music/Ataque_Tonelada_Onbeat_1.mp3`,
-  },
-  {
-    title: "Meu Violão",
-    artist: "Tonelada Elétrica",
-    src: `${import.meta.env.BASE_URL}music/Meu_Violao.mp3`,
-  },
-  {
-    title: "Na Brisa do Pensamento",
-    artist: "Tonelada Elétrica",
-    src: `${import.meta.env.BASE_URL}music/Na_Brisa_do_Pensamento.mp3`,
-  },
-  {
-    title: "Na Brisa do Pensamento (v2)",
-    artist: "Tonelada Elétrica",
-    src: `${import.meta.env.BASE_URL}music/Na_Brisa_do_Pensamento_v2.mp3`,
-  },
-  {
-    title: "Ruas (Cover)",
-    artist: "Tonelada Elétrica",
-    src: `${import.meta.env.BASE_URL}music/Ruas_Cover.mp3`,
-  },
-  {
-    title: "Sem Regras",
-    artist: "Tonelada Elétrica",
-    src: `${import.meta.env.BASE_URL}music/Sem_Regras.mp3`,
-  },
-  {
-    title: "Soumm",
-    artist: "Tonelada Elétrica",
-    src: `${import.meta.env.BASE_URL}music/Soumm.mp3`,
-  },
+const musicSrc = (filename: string) =>
+  `${import.meta.env.BASE_URL}music/${encodeURIComponent(filename)}`;
+
+// Catálogo oficial em /public/music (mesma origem = sem CORS).
+const CATALOG: Track[] = [
+  { title: "Alucinação", artist: "Tonelada Elétrica", src: musicSrc("alucinacao.mp3") },
+  { title: "Alucinação (Cover 2025)", artist: "Tonelada Elétrica", src: musicSrc("Alucinacao_cover_2025.mp3") },
+  { title: "Alucination Back Free", artist: "Tonelada Elétrica", src: musicSrc("alucination back free.mp3") },
+  { title: "Atak 2026 (Extend)", artist: "Tonelada Elétrica", src: musicSrc("Atak_2026_Extend_1.mp3") },
+  { title: "Ataque Tonelada (Onbeat)", artist: "Tonelada Elétrica", src: musicSrc("Ataque_Tonelada_Onbeat_1.mp3") },
+  { title: "Faça seu site com Magic Page", artist: "Tonelada Elétrica", src: musicSrc("faca seu site com Magic Page.mp3") },
+  { title: "Instrumental Manguebeat", artist: "Tonelada Elétrica", src: musicSrc("instrumental manguebeat.mp3") },
+  { title: "Meu Violão", artist: "Tonelada Elétrica", src: musicSrc("Meu_Violao.mp3") },
+  { title: "Mina Gasolina (Cover 2026)", artist: "Tonelada Elétrica", src: musicSrc("Mina Gasolina- Tonelada Elétrica Cover  2026.mp3") },
+  { title: "Na Brisa do Pensamento", artist: "Tonelada Elétrica", src: musicSrc("Na_Brisa_do_Pensamento.mp3") },
+  { title: "No Compasso da Onda", artist: "Tonelada Elétrica", src: musicSrc("No compasso da onda.mp3") },
+  { title: "Ruas Vazias (Cover)", artist: "Tonelada Elétrica", src: musicSrc("Ruas Vazias (Cover).mp3") },
+  { title: "Ruas (Cover)", artist: "Tonelada Elétrica", src: musicSrc("Ruas_Cover.mp3") },
+  { title: "Sem Regras", artist: "Tonelada Elétrica", src: musicSrc("Sem_Regras.mp3") },
+  { title: "Sirenes do Mangue", artist: "Tonelada Elétrica", src: musicSrc("Sirenes do Mangue.mp3") },
+  { title: "Somos Contra (Cover 2026)", artist: "Tonelada Elétrica", src: musicSrc("Somos Contra - Sistema Nervoso Versão Cover 2026.mp3") },
+  { title: "Soumm", artist: "Tonelada Elétrica", src: musicSrc("Soumm.mp3") },
+  { title: "Swamp Shuffle Trance", artist: "Tonelada Elétrica", src: musicSrc("Swamp Shuffle Trance.mp3") },
+  { title: "Tirando Onda na Contra Mão", artist: "Tonelada Elétrica", src: musicSrc("Tirando Onda na Contra mão.mp3") },
+  { title: "Um Risco no Tempo", artist: "Tonelada Elétrica", src: musicSrc("Um Risco no tempo.mp3") },
 ];
+
+function shuffleTracks(tracks: Track[]): Track[] {
+  const arr = [...tracks];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
 
 type RadioContextValue = {
   tracks: Track[];
@@ -76,6 +63,8 @@ export const RadioProvider = ({ children }: { children: ReactNode }) => {
   const audioCtxRef = useRef<AudioContext | null>(null);
   const sourceRef = useRef<MediaElementAudioSourceNode | null>(null);
   const [analyser, setAnalyser] = useState<AnalyserNode | null>(null);
+  // Ordem aleatória a cada carga do site
+  const [tracks] = useState<Track[]>(() => shuffleTracks(CATALOG));
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const playAfterSelectRef = useRef(false);
@@ -113,11 +102,11 @@ export const RadioProvider = ({ children }: { children: ReactNode }) => {
   }, [ensureAudioGraph]);
 
   const next = useCallback(() => {
-    setCurrentIndex((i) => (i + 1) % DEMO_TRACKS.length);
-  }, []);
+    setCurrentIndex((i) => (i + 1) % tracks.length);
+  }, [tracks.length]);
   const prev = useCallback(() => {
-    setCurrentIndex((i) => (i - 1 + DEMO_TRACKS.length) % DEMO_TRACKS.length);
-  }, []);
+    setCurrentIndex((i) => (i - 1 + tracks.length) % tracks.length);
+  }, [tracks.length]);
   const selectIndex = useCallback((i: number) => {
     playAfterSelectRef.current = true;
     setCurrentIndex(i);
@@ -138,9 +127,9 @@ export const RadioProvider = ({ children }: { children: ReactNode }) => {
   }, [currentIndex]);
 
   const value = useMemo<RadioContextValue>(() => ({
-    tracks: DEMO_TRACKS,
+    tracks,
     currentIndex,
-    current: DEMO_TRACKS[currentIndex],
+    current: tracks[currentIndex],
     isPlaying,
     togglePlay,
     next,
@@ -149,15 +138,14 @@ export const RadioProvider = ({ children }: { children: ReactNode }) => {
     audioRef,
     analyser,
     ensureAudioGraph,
-  }), [currentIndex, isPlaying, togglePlay, next, prev, selectIndex, analyser, ensureAudioGraph]);
+  }), [tracks, currentIndex, isPlaying, togglePlay, next, prev, selectIndex, analyser, ensureAudioGraph]);
 
   return (
     <RadioContext.Provider value={value}>
       {children}
-      {/* Persistent audio element - survives all section changes */}
       <audio
         ref={audioRef}
-        src={DEMO_TRACKS[currentIndex].src}
+        src={tracks[currentIndex]?.src}
         crossOrigin="anonymous"
         preload="metadata"
         onEnded={next}
