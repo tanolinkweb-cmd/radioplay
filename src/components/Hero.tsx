@@ -1,5 +1,5 @@
 import { type CSSProperties, useEffect, useRef, useState } from "react";
-import { Check, Palette, Pause, Play, Shuffle, Zap } from "lucide-react";
+import { Check, ChevronRight, Palette, Pause, Play, Shuffle, Zap } from "lucide-react";
 import { useRadio } from "@/context/RadioContext";
 import SpectrumVisualizer, { type VisualizationMode } from "./SpectrumVisualizer";
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,15 @@ const VISUALIZATION_OPTIONS: { value: VisualizationChoice; label: string }[] = [
   { value: "kaleidoscope", label: "Fractais caleidoscópicos" },
   { value: "random", label: "Aleatório" },
 ];
+const VISUALIZATION_SHORT_LABELS: Record<VisualizationChoice, string> = {
+  bars: "Barras",
+  waves: "Ondas",
+  circles: "Círculos",
+  ovals: "Ovais",
+  particles: "Partículas",
+  kaleidoscope: "Fractais",
+  random: "Aleatório",
+};
 
 function getSavedVisualization(): VisualizationChoice {
   const saved = localStorage.getItem(VISUALIZATION_STORAGE_KEY);
@@ -94,6 +103,13 @@ const Hero = () => {
     };
   }, []);
 
+  const showNextVisualization = () => {
+    const currentPosition = VISUALIZATION_MODES.indexOf(activeMode);
+    const nextMode = VISUALIZATION_MODES[(currentPosition + 1) % VISUALIZATION_MODES.length];
+    setVisualization(nextMode);
+    setMenuOpen(false);
+  };
+
   return (
     <section id="hero" className="relative isolate flex min-h-[100svh] w-full items-center justify-center overflow-hidden">
       {/* Background visualizer */}
@@ -110,17 +126,29 @@ const Hero = () => {
       </div>
 
       <div ref={menuRef} className="absolute right-4 top-4 z-30 sm:right-6 sm:top-6">
-        <button
-          type="button"
-          onClick={() => setMenuOpen((open) => !open)}
-          className="flex h-10 w-10 items-center justify-center rounded-full border border-neon-cyan/30 bg-card/55 text-neon-cyan/80 backdrop-blur-xl transition-all hover:border-neon-cyan/60 hover:bg-neon-cyan/10 hover:text-neon-cyan focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neon-cyan"
-          aria-label="Escolher visualização de áudio"
-          aria-haspopup="menu"
-          aria-expanded={menuOpen}
-          title="Visualização de áudio"
-        >
-          <Palette className="h-4 w-4" />
-        </button>
+        <div className="flex overflow-hidden rounded-full border border-neon-cyan/30 bg-card/60 text-neon-cyan/80 shadow-[0_0_20px_hsl(var(--neon-cyan)/0.08)] backdrop-blur-xl transition-colors hover:border-neon-cyan/55">
+          <button
+            type="button"
+            onClick={() => setMenuOpen((open) => !open)}
+            className="flex h-10 items-center gap-2 pl-3 pr-2 text-[10px] font-semibold uppercase tracking-[0.16em] transition-colors hover:bg-neon-cyan/10 hover:text-neon-cyan focus-visible:outline-none focus-visible:bg-neon-cyan/15"
+            aria-label="Escolher visualização de áudio"
+            aria-haspopup="menu"
+            aria-expanded={menuOpen}
+            title="Abrir estilos de visualização"
+          >
+            <Palette className="h-4 w-4 shrink-0" />
+            <span>{VISUALIZATION_SHORT_LABELS[visualization]}</span>
+          </button>
+          <button
+            type="button"
+            onClick={showNextVisualization}
+            className="flex h-10 w-9 items-center justify-center border-l border-neon-cyan/20 transition-colors hover:bg-neon-magenta/10 hover:text-neon-magenta focus-visible:outline-none focus-visible:bg-neon-magenta/15"
+            aria-label="Trocar para a próxima visualização"
+            title="Próxima visualização"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
 
         {menuOpen && (
           <div
