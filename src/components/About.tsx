@@ -20,7 +20,7 @@ const About = () => {
 
           <div>
             <div className="mb-4 inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-neon-magenta">
-              <Music2 className="h-3 w-3" /> Sobre a banda
+              <Music2 className="h-3 w-3" /> Tonelada Elétrica
             </div>
             <h2 className="font-display text-5xl leading-none sm:text-6xl">
               Uma <span className="text-gradient-neon">tonelada</span> de barulho.
@@ -33,9 +33,9 @@ const About = () => {
 
             <dl className="mt-10 grid grid-cols-3 gap-4 text-center">
               {[
-                { k: "12", v: "Anos de estrada" },
-                { k: "+200", v: "Shows tocados" },
-                { k: "3", v: "Álbuns" },
+                { k: "Ouça", v: "Sem moderação" },
+                { k: "24h", v: "Online sem parar" },
+                { k: "Decibéis", v: "Do bit ao volt" },
               ].map((s) => (
                 <div key={s.v} className="rounded-2xl border border-border bg-card/50 p-5 backdrop-blur transition-colors hover:border-neon-cyan/40">
                   <dt className="font-display text-3xl text-gradient-neon">{s.k}</dt>

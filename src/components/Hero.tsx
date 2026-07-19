@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { type CSSProperties, useEffect, useRef, useState } from "react";
 import { Check, Palette, Pause, Play, Shuffle, Zap } from "lucide-react";
 import { useRadio } from "@/context/RadioContext";
 import SpectrumVisualizer, { type VisualizationMode } from "./SpectrumVisualizer";
@@ -36,6 +36,29 @@ function getRandomMode(previous?: VisualizationMode): VisualizationMode {
   const available = VISUALIZATION_MODES.filter((mode) => mode !== previous);
   return available[Math.floor(Math.random() * available.length)];
 }
+
+const AnimatedWord = ({
+  word,
+  className,
+  accents,
+}: {
+  word: string;
+  className: string;
+  accents: number[];
+}) => (
+  <span className={`hero-word ${className}`} aria-label={word}>
+    {Array.from(word).map((letter, index) => (
+      <span
+        key={`${letter}-${index}`}
+        aria-hidden="true"
+        className={`hero-letter ${accents.includes(index) ? "hero-letter-accent" : ""}`}
+        style={{ "--letter-index": index } as CSSProperties}
+      >
+        {letter}
+      </span>
+    ))}
+  </span>
+);
 
 const Hero = () => {
   const { currentIndex, isPlaying, togglePlay } = useRadio();
@@ -163,12 +186,16 @@ const Hero = () => {
         </div>
 
         <h1 className="font-display text-[clamp(3.5rem,14vw,11rem)] leading-[0.85] tracking-tight">
-          <span className="block text-gradient-neon drop-shadow-[0_0_30px_hsl(var(--neon-magenta)/0.5)]">
-            TONELADA
-          </span>
-          <span className="mt-1 block text-foreground/95 [text-shadow:0_0_25px_hsl(var(--neon-cyan)/0.4)]">
-            ELÉTRICA
-          </span>
+          <AnimatedWord
+            word="TONELADA"
+            accents={[1, 4, 7]}
+            className="hero-word-neon drop-shadow-[0_0_30px_hsl(var(--neon-magenta)/0.5)]"
+          />
+          <AnimatedWord
+            word="ELÉTRICA"
+            accents={[0, 3, 6]}
+            className="hero-word-light mt-1 text-foreground/95 [text-shadow:0_0_25px_hsl(var(--neon-cyan)/0.4)]"
+          />
         </h1>
 
         <p className="mt-6 max-w-xl text-balance text-base text-muted-foreground sm:text-lg">
