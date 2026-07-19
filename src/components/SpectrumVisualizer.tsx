@@ -41,6 +41,8 @@ const SpectrumVisualizer = ({ className, intensity = 1, mode = "bars" }: Props) 
     const frequencyData = analyser ? new Uint8Array(analyser.frequencyBinCount) : null;
     const timeData = analyser ? new Uint8Array(analyser.fftSize) : null;
     const particles = createParticles(100);
+    let bassBaseline = 0;
+    let beatPulse = 0;
 
     const resize = () => {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -61,25 +63,31 @@ const SpectrumVisualizer = ({ className, intensity = 1, mode = "bars" }: Props) 
 
       const frequency = readFrequency(analyser, frequencyData, phaseRef.current, isPlaying);
       const waveform = readWaveform(analyser, timeData, phaseRef.current, isPlaying);
+      const bass = average(frequency, 0, 18);
+      bassBaseline += (bass - bassBaseline) * (bass > bassBaseline ? 0.08 : 0.025);
+      const transient = Math.max(0, bass - bassBaseline);
+      beatPulse = isPlaying
+        ? Math.max(beatPulse * 0.82, Math.min(1, transient * 4.5 + bass * 0.18))
+        : beatPulse * 0.88;
 
       switch (mode) {
         case "waves":
-          drawWaves(ctx, w, h, waveform, frequency, intensity);
+          drawWaves(ctx, w, h, waveform, frequency, intensity, beatPulse);
           break;
         case "circles":
-          drawCircles(ctx, w, h, frequency, phaseRef.current, intensity);
+          drawCircles(ctx, w, h, frequency, phaseRef.current, intensity, beatPulse);
           break;
         case "ovals":
-          drawOvals(ctx, w, h, frequency, phaseRef.current, intensity);
+          drawOvals(ctx, w, h, frequency, phaseRef.current, intensity, beatPulse);
           break;
         case "particles":
-          drawParticles(ctx, w, h, particles, frequency, phaseRef.current, isPlaying, intensity);
+          drawParticles(ctx, w, h, particles, frequency, phaseRef.current, isPlaying, intensity, beatPulse);
           break;
         case "kaleidoscope":
-          drawKaleidoscope(ctx, w, h, frequency, phaseRef.current, intensity);
+          drawKaleidoscope(ctx, w, h, frequency, phaseRef.current, intensity, beatPulse);
           break;
         default:
-          drawBars(ctx, w, h, frequency, intensity);
+          drawBars(ctx, w, h, frequency, intensity, beatPulse);
       }
 
       rafRef.current = requestAnimationFrame(draw);
@@ -105,7 +113,8 @@ function readFrequency(
   if (analyser && target) {
     analyser.getByteFrequencyData(target);
     for (let i = 0; i < values.length; i++) {
-      const live = target[Math.min(i, target.length - 1)] / 255;
+      const normalized = target[Math.min(i, target.length - 1)] / 255;
+      const live = Math.min(1, Math.pow(normalized, 0.72) * (i < 24 ? 1.38 : 1.18));
       const idle = 0.08 + ((Math.sin(phase * 3 + i * 0.28) + 1) / 2) * 0.06;
       values[i] = isPlaying ? live : Math.max(live * 0.35, idle);
     }
@@ -129,7 +138,7 @@ function readWaveform(
     analyser.getByteTimeDomainData(target);
     const step = target.length / values.length;
     for (let i = 0; i < values.length; i++) {
-      values[i] = (target[Math.floor(i * step)] - 128) / 128;
+      values[i] = Math.max(-1, Math.min(1, ((target[Math.floor(i * step)] - 128) / 128) * 1.3));
     }
     return values;
   }
@@ -146,13 +155,15 @@ function drawBars(
   h: number,
   data: number[],
   intensity: number,
+  beat: number,
 ) {
   const barCount = 72;
   const gap = 3;
   const barWidth = Math.max(1, (w - gap * (barCount - 1)) / barCount);
 
   for (let i = 0; i < barCount; i++) {
-    const value = data[Math.floor((i / barCount) * data.length)] * intensity;
+    const bassWeight = 1 - i / barCount;
+    const value = data[Math.floor((i / barCount) * data.length)] * intensity * (1 + beat * bassWeight * 0.62);
     const barH = Math.max(4, value * h * 0.95);
     const x = i * (barWidth + gap);
     const y = (h - barH) / 2;
@@ -179,6 +190,7 @@ function drawWaves(
   waveform: number[],
   frequency: number[],
   intensity: number,
+  beat: number,
 ) {
   const energy = average(frequency, 0, 36);
   const colors = [CYAN, MAGENTA, "151, 71, 255", CYAN];
@@ -186,8 +198,8 @@ function drawWaves(
     ctx.beginPath();
     for (let i = 0; i < waveform.length; i++) {
       const x = (i / (waveform.length - 1)) * w;
-      const offset = Math.sin(i * 0.1 + line * 1.7) * energy * 25;
-      const y = h / 2 + waveform[i] * h * (0.24 + line * 0.035) * intensity + offset;
+      const offset = Math.sin(i * 0.1 + line * 1.7) * energy * (25 + beat * 22);
+      const y = h / 2 + waveform[i] * h * (0.24 + line * 0.035) * intensity * (1 + beat * 0.5) + offset;
       if (i === 0) ctx.moveTo(x, y);
       else ctx.lineTo(x, y);
     }
@@ -206,6 +218,7 @@ function drawCircles(
   data: number[],
   phase: number,
   intensity: number,
+  beat: number,
 ) {
   const cx = w / 2;
   const cy = h / 2;
@@ -215,7 +228,7 @@ function drawCircles(
   for (let ring = 0; ring < 8; ring++) {
     const localEnergy = average(data, ring * 5, ring * 5 + 12);
     const pulse = Math.sin(phase * 4 - ring * 0.55) * 8;
-    const radius = 35 + ring * (maxRadius / 9) + pulse + localEnergy * 80 * intensity + bass * 30;
+    const radius = 35 + ring * (maxRadius / 9) + pulse + localEnergy * 80 * intensity + bass * 30 + beat * (62 - ring * 3);
     ctx.beginPath();
     ctx.arc(cx, cy, Math.max(8, radius), 0, Math.PI * 2);
     const color = ring % 2 === 0 ? CYAN : MAGENTA;
@@ -234,6 +247,7 @@ function drawOvals(
   data: number[],
   phase: number,
   intensity: number,
+  beat: number,
 ) {
   const cx = w / 2;
   const cy = h / 2;
@@ -243,8 +257,8 @@ function drawOvals(
     const energy = average(data, ring * 6, ring * 6 + 14);
     const base = 28 + ring * max * 0.038;
     const rotation = phase * (ring % 2 === 0 ? 0.25 : -0.18) + ring * 0.13;
-    const radiusX = base * (1.45 + energy * intensity);
-    const radiusY = base * (0.48 + energy * 0.75 * intensity);
+    const radiusX = base * (1.45 + energy * intensity + beat * 0.32);
+    const radiusY = base * (0.48 + energy * 0.75 * intensity + beat * 0.18);
     ctx.beginPath();
     ctx.ellipse(cx, cy, radiusX, radiusY, rotation, 0, Math.PI * 2);
     const color = ring % 3 === 0 ? MAGENTA : CYAN;
@@ -275,6 +289,7 @@ function drawParticles(
   phase: number,
   isPlaying: boolean,
   intensity: number,
+  beat: number,
 ) {
   const cx = w / 2;
   const cy = h / 2;
@@ -284,13 +299,13 @@ function drawParticles(
   for (let i = 0; i < particles.length; i++) {
     const particle = particles[i];
     const energy = data[i % data.length];
-    particle.distance += particle.speed * (isPlaying ? 1 + bass * 8 : 0.3);
+    particle.distance += particle.speed * (isPlaying ? 1 + bass * 8 + beat * 7 : 0.3);
     particle.angle += 0.0015 + energy * 0.005;
     if (particle.distance > 1) {
       particle.distance = Math.random() * 0.08;
       particle.angle = Math.random() * Math.PI * 2;
     }
-    const burst = particle.distance * maxDistance * (0.35 + bass * intensity);
+    const burst = particle.distance * maxDistance * (0.35 + bass * intensity + beat * 0.3);
     const wobble = Math.sin(phase * 5 + i) * energy * 24;
     const x = cx + Math.cos(particle.angle) * (burst + wobble);
     const y = cy + Math.sin(particle.angle) * (burst + wobble);
@@ -311,11 +326,12 @@ function drawKaleidoscope(
   data: number[],
   phase: number,
   intensity: number,
+  beat: number,
 ) {
   const cx = w / 2;
   const cy = h / 2;
   const slices = 12;
-  const maxRadius = Math.min(w, h) * 0.44;
+  const maxRadius = Math.min(w, h) * 0.44 * (1 + beat * 0.16);
   ctx.save();
   ctx.translate(cx, cy);
   ctx.rotate(phase * 0.12);
@@ -329,7 +345,7 @@ function drawKaleidoscope(
     for (let point = 0; point < 22; point++) {
       const energy = data[(point * 3 + slice) % data.length];
       const radius = (point / 21) * maxRadius;
-      const angle = Math.sin(phase * 2 + point * 0.55) * 0.14 + energy * 0.3 * intensity;
+      const angle = Math.sin(phase * 2 + point * 0.55) * (0.14 + beat * 0.08) + energy * 0.3 * intensity;
       ctx.lineTo(Math.cos(angle) * radius, Math.sin(angle) * radius);
     }
     const color = slice % 2 === 0 ? CYAN : MAGENTA;

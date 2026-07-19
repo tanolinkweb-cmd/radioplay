@@ -82,7 +82,9 @@ export const RadioProvider = ({ children }: { children: ReactNode }) => {
       const src = ctx.createMediaElementSource(audioRef.current);
       const an = ctx.createAnalyser();
       an.fftSize = 256;
-      an.smoothingTimeConstant = 0.82;
+      an.smoothingTimeConstant = 0.58;
+      an.minDecibels = -88;
+      an.maxDecibels = -12;
       src.connect(an);
       an.connect(ctx.destination);
       audioCtxRef.current = ctx;
