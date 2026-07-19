@@ -172,7 +172,7 @@ const Hero = () => {
         </h1>
 
         <p className="mt-6 max-w-xl text-balance text-base text-muted-foreground sm:text-lg">
-          Rock'n'roll de alta voltagem direto na sua veia. Conecte os fones, aumente o volume e
+          Música de alta voltagem direto na sua veia. Conecte os fones, aumente o volume e
           deixe o spectrum analyzer dançar com a batida.
         </p>
 
