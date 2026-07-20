@@ -2,7 +2,7 @@ import { Instagram, Youtube, Music } from "lucide-react";
 
 const Footer = () => {
   return (
-    <footer className="relative border-t border-border/60 pb-32 pt-16">
+    <footer className="relative border-t border-border/60 pb-32 pt-12">
       <div className="container max-w-5xl">
         <div className="flex flex-col items-center gap-8 text-center">
           <div className="font-display text-3xl tracking-widest text-gradient-neon">

@@ -2,7 +2,7 @@ import { Music2 } from "lucide-react";
 
 const About = () => {
   return (
-    <section id="banda" className="relative py-28 sm:py-36">
+    <section id="banda" className="relative py-16 sm:py-20">
       <div className="container max-w-5xl">
         <div className="grid gap-12 md:grid-cols-2 md:items-center">
           <div className="relative">
