@@ -24,7 +24,7 @@ const Tracks = () => {
             const active = i === currentIndex;
             return (
               <li
-                key={t.title}
+                key={t.id}
                 className={`group flex items-center gap-4 px-5 py-4 transition-colors ${
                   active ? "bg-neon-magenta/5" : "hover:bg-neon-cyan/5"
                 }`}

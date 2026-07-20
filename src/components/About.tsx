@@ -26,8 +26,8 @@ const About = () => {
               Uma <span className="text-gradient-neon">tonelada</span> de barulho.
             </h2>
             <p className="mt-6 text-base leading-relaxed text-muted-foreground">
-              A Tonelada Elétrica nasceu nas garagens, cresceu nos bares e hoje detona em palcos
-              pelo país. Riffs cortantes, baterias pesadas e atitude que não pede licença.
+              Nascida da paixão pelo rock, a Tonelada Elétrica entrega riffs cortantes, baterias
+              pesadas e uma atitude que não pede licença. Um som direto, intenso e cheio de energia.
               Aqui, o rock'n'roll é servido em alta voltagem.
             </p>
 
