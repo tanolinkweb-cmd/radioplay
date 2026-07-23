@@ -13,6 +13,7 @@ import { useRadio } from "@/context/RadioContext";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import CoverArt from "@/components/CoverArt";
+import MarqueeText from "@/components/MarqueeText";
 
 const formatTime = (seconds: number) => {
   if (!Number.isFinite(seconds) || seconds < 0) return "0:00";
@@ -199,11 +200,12 @@ const FloatingPlayer = () => {
           </div>
 
           <div className="min-w-0 flex-1 overflow-hidden">
-            <div className="flex items-baseline gap-2">
-              <span className="truncate font-display text-base tracking-wider text-foreground sm:text-lg">
-                {current.title}
-              </span>
-              <span className="hidden truncate text-xs text-muted-foreground sm:inline">
+            <div className="flex min-w-0 items-baseline gap-2">
+              <MarqueeText
+                text={current.title}
+                className="font-display text-base tracking-wider text-foreground sm:text-lg"
+              />
+              <span className="hidden shrink-0 truncate text-xs text-muted-foreground sm:inline">
                 — {current.artist}
               </span>
             </div>
