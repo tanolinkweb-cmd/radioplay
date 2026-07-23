@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, ReactNode } from "react";
+import { DEFAULT_COVER, resolveTrackCover } from "@/lib/coverArt";
 
 export type Track = {
   id: string;
@@ -19,38 +20,23 @@ const track = (filename: string, title: string, artist = "Tonelada Elétrica"): 
   src: musicSrc(filename),
 });
 
-// Catálogo oficial em /public/music (mesma origem = sem CORS).
+// Catálogo sincronizado com /public/music
 const CATALOG: Track[] = [
   track("A Cidade Pulsa no Escuro.mp3", "A Cidade Pulsa no Escuro"),
-  track("alucinação and Correntes.mp3", "Alucinação and Correntes"),
-  track("alucinacao.mp3", "Alucinação"),
-  track("Alucinacao_cover_2025.mp3", "Alucinação (Cover 2025)"),
-  track("alucination back free.mp3", "Alucination Back Free"),
   track("Atak_2026_Extend_1.mp3", "Atak 2026 (Extend)"),
   track("Ataque  - Tonelada Elétrica V1.mp3", "Ataque — Tonelada Elétrica V1"),
-  track("Ataque_Tonelada_Onbeat_1.mp3", "Ataque Tonelada (Onbeat)"),
-  track("Ataque-Tonelada V3.mp3", "Ataque-Tonelada V3"),
-  track("da Garagem.mp3", "Da Garagem"),
-  track("faca seu site com Magic Page.mp3", "Faça seu site com Magic Page"),
-  track("instrumental manguebeat.mp3", "Instrumental Manguebeat"),
+  track("Follow the Sound Instrumental.mp3", "Follow the Sound (Instrumental)"),
+  track("Little Girl - Tonelada Eletrica.mp3", "Little Girl"),
   track("Meu_Violao.mp3", "Meu Violão"),
-  track("Mina Gasolina- Tonelada Elétrica Cover  2026.mp3", "Mina Gasolina (Cover 2026)"),
-  track("Na_Brisa_do_Pensamento.mp3", "Na Brisa do Pensamento"),
+  track("Murmur of Brasswood.mp3", "Murmur of Brasswood"),
   track("No compasso da onda.mp3", "No Compasso da Onda"),
-  track("Outros Tempos.mp3", "Outros Tempos"),
+  track("Rolling Groove.mp3", "Rolling Groove"),
   track("Rolling Thunder Vol2.mp3", "Rolling Thunder Vol. 2"),
   track("Ruas Vazias (Cover).mp3", "Ruas Vazias (Cover)"),
-  track("Ruas_Cover.mp3", "Ruas (Cover)"),
-  track("Sem_Regras.mp3", "Sem Regras"),
   track("Sinta o Groove.mp3", "Sinta o Groove"),
-  track("Sirenes do Mangue (Cover).mp3", "Sirenes do Mangue (Cover)"),
   track("Som Reagge v1 instrumental.mp3", "Som Reggae v1 (Instrumental)"),
-  track("Somos Contra - Sistema Nervoso Versão Cover 2026.mp3", "Somos Contra (Cover 2026)"),
-  track("Soumm.mp3", "Soumm"),
-  track("Swamp Shuffle Trance.mp3", "Swamp Shuffle Trance"),
+  track("Sweet guitar.mp3", "Sweet Guitar"),
   track("Tempo Espaço -Tonelada Elétrica.mp3", "Tempo Espaço"),
-  track("Tirando Onda na Contra mão.mp3", "Tirando Onda na Contra Mão"),
-  track("Um Risco no tempo.mp3", "Um Risco no Tempo"),
   track("Uma Tonelada.mp3", "Uma Tonelada"),
 ];
 
@@ -94,6 +80,8 @@ type RadioContextValue = {
   selectionTracks: Track[];
   isFavorite: (id: string) => boolean;
   toggleFavorite: (id: string) => void;
+  covers: Record<string, string>;
+  getCover: (id: string) => string;
 };
 
 const RadioContext = createContext<RadioContextValue | null>(null);
@@ -103,12 +91,12 @@ export const RadioProvider = ({ children }: { children: ReactNode }) => {
   const audioCtxRef = useRef<AudioContext | null>(null);
   const sourceRef = useRef<MediaElementAudioSourceNode | null>(null);
   const [analyser, setAnalyser] = useState<AnalyserNode | null>(null);
-  // Ordem aleatória a cada carga do site
   const [tracks] = useState<Track[]>(() => shuffleTracks(CATALOG));
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [radioOn, setRadioOn] = useState(false);
   const [selectionIds, setSelectionIds] = useState<string[]>(() => readSelectionIds());
+  const [covers, setCovers] = useState<Record<string, string>>({});
   const playAfterChangeRef = useRef(false);
   const radioOnRef = useRef(false);
 
@@ -119,6 +107,24 @@ export const RadioProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     localStorage.setItem(SELECTION_STORAGE_KEY, JSON.stringify(selectionIds));
   }, [selectionIds]);
+
+  // Extrai capas ID3 (ou usa default) para todas as faixas
+  useEffect(() => {
+    let cancelled = false;
+    CATALOG.forEach(async (item) => {
+      const cover = await resolveTrackCover(item.src);
+      if (cancelled) return;
+      setCovers((prev) => (prev[item.id] ? prev : { ...prev, [item.id]: cover }));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const getCover = useCallback(
+    (id: string) => covers[id] || DEFAULT_COVER,
+    [covers],
+  );
 
   const ensureAudioGraph = useCallback(() => {
     if (!audioRef.current) return;
@@ -155,7 +161,6 @@ export const RadioProvider = ({ children }: { children: ReactNode }) => {
         radioOnRef.current = false;
       });
     } else {
-      // Só para quando o usuário pausa explicitamente
       setRadioOn(false);
       radioOnRef.current = false;
       a.pause();
@@ -174,14 +179,12 @@ export const RadioProvider = ({ children }: { children: ReactNode }) => {
   }, [tracks.length]);
 
   const selectIndex = useCallback((i: number) => {
-    // Escolher faixa liga o modo rádio e toca
     setRadioOn(true);
     radioOnRef.current = true;
     playAfterChangeRef.current = true;
     setCurrentIndex(i);
   }, []);
 
-  // Troca de faixa: mantém rádio contínua se estiver ligada
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
@@ -233,6 +236,8 @@ export const RadioProvider = ({ children }: { children: ReactNode }) => {
     selectionTracks,
     isFavorite,
     toggleFavorite,
+    covers,
+    getCover,
   }), [
     tracks,
     currentIndex,
@@ -248,6 +253,8 @@ export const RadioProvider = ({ children }: { children: ReactNode }) => {
     selectionTracks,
     isFavorite,
     toggleFavorite,
+    covers,
+    getCover,
   ]);
 
   return (
@@ -259,7 +266,6 @@ export const RadioProvider = ({ children }: { children: ReactNode }) => {
         crossOrigin="anonymous"
         preload="metadata"
         onEnded={() => {
-          // Rádio contínua: avança e segue tocando até o usuário pausar
           if (radioOnRef.current) {
             playAfterChangeRef.current = true;
             setCurrentIndex((i) => (i + 1) % tracks.length);
@@ -269,7 +275,6 @@ export const RadioProvider = ({ children }: { children: ReactNode }) => {
         }}
         onPlay={() => setIsPlaying(true)}
         onPause={() => {
-          // Ignora pause transitório ao trocar faixa no modo rádio
           if (!radioOnRef.current) setIsPlaying(false);
         }}
       />

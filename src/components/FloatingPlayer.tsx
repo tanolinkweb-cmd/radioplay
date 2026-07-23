@@ -4,7 +4,6 @@ import {
   ListMusic,
   Pause,
   Play,
-  Radio,
   SkipBack,
   SkipForward,
   Volume2,
@@ -13,6 +12,7 @@ import {
 import { useRadio } from "@/context/RadioContext";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
+import CoverArt from "@/components/CoverArt";
 
 const formatTime = (seconds: number) => {
   if (!Number.isFinite(seconds) || seconds < 0) return "0:00";
@@ -39,6 +39,7 @@ const FloatingPlayer = () => {
     isFavorite,
     toggleFavorite,
     selectionTracks,
+    getCover,
   } = useRadio();
 
   const [volume, setVolume] = useState(0.8);
@@ -180,6 +181,13 @@ const FloatingPlayer = () => {
         </div>
 
         <div className="flex items-center gap-2 px-3 py-2.5 sm:gap-4 sm:px-5 sm:py-3">
+          <CoverArt
+            src={getCover(current.id)}
+            alt={`Capa de ${current.title}`}
+            size="md"
+            className={isPlaying ? "ring-1 ring-neon-magenta/50" : ""}
+          />
+
           <div className="hidden items-center gap-2 rounded-full border border-neon-magenta/50 bg-neon-magenta/10 px-3 py-1 sm:flex">
             <span className="relative flex h-2 w-2">
               <span className={`absolute inline-flex h-full w-full rounded-full bg-neon-magenta opacity-75 ${radioOn ? "animate-ping" : ""}`} />
@@ -189,8 +197,6 @@ const FloatingPlayer = () => {
               {radioOn ? "AO VIVO" : "RÁDIO"}
             </span>
           </div>
-
-          <Radio className="h-5 w-5 shrink-0 text-neon-cyan sm:hidden" />
 
           <div className="min-w-0 flex-1 overflow-hidden">
             <div className="flex items-baseline gap-2">
@@ -303,15 +309,12 @@ const FloatingPlayer = () => {
                               }
                               className="flex min-w-0 flex-1 items-center gap-3 rounded-lg px-1 py-1 text-left"
                             >
-                              <span
-                                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-[10px] font-display tracking-wider ${
-                                  active
-                                    ? "border-neon-magenta text-neon-magenta shadow-[0_0_12px_hsl(var(--neon-magenta)/0.45)]"
-                                    : "border-border text-muted-foreground"
-                                }`}
-                              >
-                                {String((queueIndex >= 0 ? queueIndex : 0) + 1).padStart(2, "0")}
-                              </span>
+                              <CoverArt
+                                src={getCover(track.id)}
+                                alt={`Capa de ${track.title}`}
+                                size="sm"
+                                className={active ? "ring-1 ring-neon-magenta/60" : ""}
+                              />
                               <span className="min-w-0 flex-1">
                                 <span
                                   className={`block truncate text-sm font-display tracking-wider ${

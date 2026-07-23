@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Heart, Pause, Play } from "lucide-react";
 import { useRadio } from "@/context/RadioContext";
+import CoverArt from "@/components/CoverArt";
 
 const formatTime = (seconds: number) => {
   if (!Number.isFinite(seconds) || seconds < 0) return "--:--";
@@ -24,6 +25,7 @@ const Tracks = () => {
     toggleFavorite,
     selectionTracks,
     audioRef,
+    getCover,
   } = useRadio();
 
   const [filter, setFilter] = useState<ListFilter>("all");
@@ -145,6 +147,12 @@ const Tracks = () => {
                   active ? "bg-neon-magenta/5" : "hover:bg-neon-cyan/5"
                 }`}
               >
+                <CoverArt
+                  src={getCover(t.id)}
+                  alt={`Capa de ${t.title}`}
+                  size="sm"
+                  className={active ? "ring-1 ring-neon-magenta/50" : ""}
+                />
                 <button
                   onClick={() => {
                     if (active) togglePlay();
