@@ -7,12 +7,14 @@ export type Track = {
   artist: string;
   src: string;
   filename: string;
+  /** Número fixo na setlist (ordem alfabética). */
+  number: number;
 };
 
 const musicSrc = (filename: string) =>
   `${import.meta.env.BASE_URL}music/${encodeURIComponent(filename)}`;
 
-const track = (filename: string, title: string, artist = "Tonelada Elétrica"): Track => ({
+const track = (filename: string, title: string, artist = "Tonelada Elétrica"): Omit<Track, "number"> => ({
   id: filename,
   filename,
   title,
@@ -20,8 +22,8 @@ const track = (filename: string, title: string, artist = "Tonelada Elétrica"): 
   src: musicSrc(filename),
 });
 
-// Catálogo sincronizado com /public/music
-const CATALOG: Track[] = [
+// Catálogo base — numeração e ordem vêm da ordenação alfabética abaixo
+const CATALOG_RAW: Omit<Track, "number">[] = [
   track("A Cidade Pulsa no Escuro.mp3", "A Cidade Pulsa no Escuro"),
   track("Atak_2026_Extend_1.mp3", "Atak 2026 (Extend)"),
   track("Ataque  - Tonelada Elétrica V1.mp3", "Ataque — Tonelada Elétrica V1"),
@@ -42,15 +44,16 @@ const CATALOG: Track[] = [
   track("Which Sheila.mp3", "Which Sheila"),
 ];
 
+/** Sempre A→Z; novas faixas entram na posição alfabética e ganham número estável. */
+const CATALOG: Track[] = [...CATALOG_RAW]
+  .sort((a, b) => a.title.localeCompare(b.title, "pt-BR", { sensitivity: "base" }))
+  .map((item, index) => ({ ...item, number: index + 1 }));
+
 const SELECTION_STORAGE_KEY = "tonelada-selection";
 
-function shuffleTracks(tracks: Track[]): Track[] {
-  const arr = [...tracks];
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
+function randomStartIndex(length: number) {
+  if (length <= 0) return 0;
+  return Math.floor(Math.random() * length);
 }
 
 function readSelectionIds(): string[] {
@@ -93,8 +96,8 @@ export const RadioProvider = ({ children }: { children: ReactNode }) => {
   const audioCtxRef = useRef<AudioContext | null>(null);
   const sourceRef = useRef<MediaElementAudioSourceNode | null>(null);
   const [analyser, setAnalyser] = useState<AnalyserNode | null>(null);
-  const [tracks] = useState<Track[]>(() => shuffleTracks(CATALOG));
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [tracks] = useState<Track[]>(CATALOG);
+  const [currentIndex, setCurrentIndex] = useState(() => randomStartIndex(CATALOG.length));
   const [isPlaying, setIsPlaying] = useState(false);
   const [radioOn, setRadioOn] = useState(false);
   const [selectionIds, setSelectionIds] = useState<string[]>(() => readSelectionIds());

@@ -7,7 +7,7 @@ export type VisualizationMode =
   | "circles"
   | "ovals"
   | "particles"
-  | "kaleidoscope";
+  | "neon";
 
 interface Props {
   className?: string;
@@ -89,8 +89,8 @@ const SpectrumVisualizer = ({ className, intensity = 1, mode = "bars" }: Props) 
         case "particles":
           drawParticles(ctx, w, h, particles, frequency, phaseRef.current, isPlaying, intensity, beatPulse);
           break;
-        case "kaleidoscope":
-          drawKaleidoscope(ctx, w, h, frequency, phaseRef.current, intensity, beatPulse);
+        case "neon":
+          drawNeonHaze(ctx, w, h, frequency, phaseRef.current, intensity, beatPulse);
           break;
         default:
           drawBars(ctx, w, h, frequency, intensity, beatPulse);
@@ -326,7 +326,7 @@ function drawParticles(
   }
 }
 
-function drawKaleidoscope(
+function drawNeonHaze(
   ctx: CanvasRenderingContext2D,
   w: number,
   h: number,
@@ -335,44 +335,51 @@ function drawKaleidoscope(
   intensity: number,
   beat: number,
 ) {
+  const bass = average(data, 0, 16);
+  const mid = average(data, 16, 48);
+  const high = average(data, 48, 90);
   const cx = w / 2;
   const cy = h / 2;
-  const slices = 12;
-  const maxRadius = Math.min(w, h) * 0.44 * (1 + beat * 0.16);
+
   ctx.save();
-  ctx.translate(cx, cy);
-  ctx.rotate(phase * 0.12);
+  ctx.globalCompositeOperation = "lighter";
 
-  for (let slice = 0; slice < slices; slice++) {
-    ctx.save();
-    ctx.rotate((slice / slices) * Math.PI * 2);
-    if (slice % 2) ctx.scale(1, -1);
+  const blobs = [
+    { x: cx + Math.sin(phase * 0.7) * w * 0.18, y: cy + Math.cos(phase * 0.55) * h * 0.12, color: CYAN, energy: bass },
+    { x: cx + Math.cos(phase * 0.5) * w * 0.22, y: cy + Math.sin(phase * 0.65) * h * 0.16, color: MAGENTA, energy: mid },
+    { x: cx + Math.sin(phase * 0.9 + 1.2) * w * 0.14, y: cy - Math.cos(phase * 0.4) * h * 0.2, color: "151, 71, 255", energy: high },
+    { x: cx - Math.cos(phase * 0.35) * w * 0.2, y: cy + Math.sin(phase * 0.8) * h * 0.1, color: CYAN, energy: (bass + mid) / 2 },
+  ];
+
+  for (const blob of blobs) {
+    const radius = (Math.min(w, h) * 0.22 + blob.energy * Math.min(w, h) * 0.38 * intensity) * (1 + beat * 0.35);
+    const glow = ctx.createRadialGradient(blob.x, blob.y, 0, blob.x, blob.y, radius);
+    glow.addColorStop(0, `rgba(${blob.color}, ${0.45 + blob.energy * 0.4 + beat * 0.2})`);
+    glow.addColorStop(0.45, `rgba(${blob.color}, ${0.18 + blob.energy * 0.22})`);
+    glow.addColorStop(1, `rgba(${blob.color}, 0)`);
+    ctx.fillStyle = glow;
     ctx.beginPath();
-    ctx.moveTo(0, 0);
-    for (let point = 0; point < 22; point++) {
-      const energy = data[(point * 3 + slice) % data.length];
-      const radius = (point / 21) * maxRadius;
-      const angle = Math.sin(phase * 2 + point * 0.55) * (0.14 + beat * 0.08) + energy * 0.3 * intensity;
-      ctx.lineTo(Math.cos(angle) * radius, Math.sin(angle) * radius);
-    }
-    const color = slice % 2 === 0 ? CYAN : MAGENTA;
-    ctx.strokeStyle = `rgba(${color}, 0.7)`;
-    ctx.lineWidth = 1.1 + average(data, 0, 24) * 2.5;
-    ctx.shadowColor = `rgba(${color}, 0.85)`;
-    ctx.shadowBlur = 14;
-    ctx.stroke();
-
-    for (let node = 4; node < 22; node += 5) {
-      const energy = data[(node * 3 + slice) % data.length];
-      const radius = (node / 21) * maxRadius;
-      ctx.beginPath();
-      ctx.arc(radius, Math.sin(phase + node) * radius * 0.12, 2 + energy * 6, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(${color}, ${0.35 + energy * 0.6})`;
-      ctx.fill();
-    }
-    ctx.restore();
+    ctx.arc(blob.x, blob.y, radius, 0, Math.PI * 2);
+    ctx.fill();
   }
+
+  // Véu esfumaçado horizontal reagindo ao mid
+  for (let i = 0; i < 5; i++) {
+    const y = h * (0.2 + i * 0.15) + Math.sin(phase * 1.2 + i) * (8 + mid * 18);
+    const band = ctx.createLinearGradient(0, y - 24, 0, y + 24);
+    const color = i % 2 === 0 ? CYAN : MAGENTA;
+    band.addColorStop(0, `rgba(${color}, 0)`);
+    band.addColorStop(0.5, `rgba(${color}, ${0.08 + mid * 0.2 + beat * 0.1})`);
+    band.addColorStop(1, `rgba(${color}, 0)`);
+    ctx.fillStyle = band;
+    ctx.fillRect(0, y - 28, w, 56);
+  }
+
   ctx.restore();
+
+  // Soft blur-like overlay via semi-transparent wash
+  ctx.fillStyle = `rgba(8, 4, 16, ${0.12 - beat * 0.04})`;
+  ctx.fillRect(0, 0, w, h);
 }
 
 function average(values: number[], start: number, end: number) {

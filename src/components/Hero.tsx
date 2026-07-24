@@ -13,7 +13,7 @@ const VISUALIZATION_MODES: VisualizationMode[] = [
   "circles",
   "ovals",
   "particles",
-  "kaleidoscope",
+  "neon",
 ];
 const VISUALIZATION_OPTIONS: { value: VisualizationChoice; label: string }[] = [
   { value: "bars", label: "Barras (original)" },
@@ -21,7 +21,7 @@ const VISUALIZATION_OPTIONS: { value: VisualizationChoice; label: string }[] = [
   { value: "circles", label: "Círculos pulsantes" },
   { value: "ovals", label: "Ovais concêntricos" },
   { value: "particles", label: "Partículas reativas" },
-  { value: "kaleidoscope", label: "Fractais caleidoscópicos" },
+  { value: "neon", label: "Neon esfumaçado (blur)" },
   { value: "random", label: "Aleatório" },
 ];
 const VISUALIZATION_SHORT_LABELS: Record<VisualizationChoice, string> = {
@@ -30,12 +30,14 @@ const VISUALIZATION_SHORT_LABELS: Record<VisualizationChoice, string> = {
   circles: "Círculos",
   ovals: "Ovais",
   particles: "Partículas",
-  kaleidoscope: "Fractais",
+  neon: "Neon",
   random: "Aleatório",
 };
 
 function getSavedVisualization(): VisualizationChoice {
   const saved = localStorage.getItem(VISUALIZATION_STORAGE_KEY);
+  // Migra Fractais removidos → Neon
+  if (saved === "kaleidoscope") return "neon";
   return VISUALIZATION_OPTIONS.some(({ value }) => value === saved)
     ? (saved as VisualizationChoice)
     : "bars";

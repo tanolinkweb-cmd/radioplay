@@ -262,7 +262,7 @@ const FloatingPlayer = () => {
                 }`}
               />
               <span className="truncate text-[9px] uppercase tracking-[0.18em] text-neon-magenta/80">
-                {radioOn ? "Ao vivo" : "Rádio"} · {currentIndex + 1}/{tracks.length}
+                {radioOn ? "Ao vivo" : "Rádio"} · {current.number}/{tracks.length}
               </span>
             </div>
             <MarqueeText
@@ -366,7 +366,7 @@ const FloatingPlayer = () => {
                                     active ? "text-gradient-neon" : "text-foreground"
                                   }`}
                                 >
-                                  {track.title}
+                                  {String(track.number).padStart(2, "0")} · {track.title}
                                 </span>
                                 <span className="block truncate text-[10px] text-muted-foreground">
                                   {track.artist}

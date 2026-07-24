@@ -179,7 +179,7 @@ const Tracks = () => {
                       active ? "text-gradient-neon" : "text-foreground"
                     }`}
                   >
-                    {String((queueIndex >= 0 ? queueIndex : 0) + 1).padStart(2, "0")} · {t.title}
+                    {String(t.number).padStart(2, "0")} · {t.title}
                   </div>
                   <div className="flex items-center gap-2 truncate text-xs text-muted-foreground">
                     <span className="truncate">{t.artist}</span>
