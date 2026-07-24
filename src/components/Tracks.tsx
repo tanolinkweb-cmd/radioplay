@@ -193,16 +193,17 @@ const Tracks = () => {
 
                 {active && (
                   <div
-                    className="relative hidden h-10 min-w-[6rem] flex-1 overflow-hidden rounded-lg sm:block"
+                    className="relative hidden h-10 min-w-[6rem] flex-1 overflow-hidden rounded-lg sm:block md:min-w-[8rem]"
                     aria-hidden="true"
-                    title="Ondas — áudio ao vivo"
+                    title="Espectro ao vivo"
                   >
-                    <SpectrumVisualizer
-                      className="absolute inset-0 h-full w-full opacity-90"
-                      mode="waves"
-                      intensity={0.95}
-                    />
-                    <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-card/50 via-transparent to-card/40" />
+                    <div className="pointer-events-none absolute inset-0 opacity-50">
+                      <SpectrumVisualizer
+                        className="absolute inset-0 h-full w-full"
+                        mode="bars"
+                        intensity={0.85}
+                      />
+                    </div>
                   </div>
                 )}
 
