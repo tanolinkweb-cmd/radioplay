@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import CoverArt from "@/components/CoverArt";
 import MarqueeText from "@/components/MarqueeText";
+import PlayerVisualizer from "@/components/PlayerVisualizer";
 
 const formatTime = (seconds: number) => {
   if (!Number.isFinite(seconds) || seconds < 0) return "0:00";
@@ -230,13 +231,19 @@ const FloatingPlayer = () => {
       ref={playlistRef}
       className="fixed bottom-3 left-1/2 z-50 w-[min(820px,calc(100vw-1.5rem))] -translate-x-1/2"
     >
-      <div className="relative rounded-2xl border border-neon-cyan/30 bg-card/80 backdrop-blur-xl shadow-[0_0_30px_-5px_hsl(var(--neon-magenta)/0.5)]">
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-[2px] overflow-hidden rounded-t-2xl">
+      <div className="relative overflow-hidden rounded-2xl border border-neon-cyan/30 bg-card/55 backdrop-blur-xl shadow-[0_0_30px_-5px_hsl(var(--neon-magenta)/0.5)]">
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-20 h-[2px] overflow-hidden rounded-t-2xl">
           <div className="h-full w-[200%] bg-gradient-to-r from-neon-cyan via-neon-magenta to-neon-cyan animate-marquee" />
         </div>
 
+        {/* Espectro em segundo plano (mais presente sob o progresso) */}
+        <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-2xl">
+          <PlayerVisualizer className="absolute inset-0 h-full w-full" />
+          <div className="absolute inset-0 bg-gradient-to-b from-card/88 via-card/55 to-card/15" />
+        </div>
+
         {/* Esquerda: capa+título | Centro: timer | Direita: controles */}
-        <div className="flex items-center gap-2 px-2.5 py-2 sm:gap-3 sm:px-3">
+        <div className="relative z-10 flex items-center gap-2 px-2.5 pt-2 sm:gap-3 sm:px-3 sm:pt-2.5">
           <CoverArt
             src={getCover(current.id)}
             alt={`Capa de ${current.title}`}
@@ -445,7 +452,10 @@ const FloatingPlayer = () => {
         </div>
 
         {/* No mobile/tablet a barra fica abaixo (no desktop já está no meio) */}
-        <div className="flex px-2.5 pb-2 md:hidden">{progressBar}</div>
+        <div className="relative z-10 flex px-2.5 pb-1 md:hidden">{progressBar}</div>
+
+        {/* Espaço sob o progresso para o espectro aparecer com mais clareza */}
+        <div className="relative z-10 h-5 sm:h-6" aria-hidden="true" />
       </div>
     </div>
   );
