@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import CoverArt from "@/components/CoverArt";
 import MarqueeText from "@/components/MarqueeText";
-import PlayerVisualizer from "@/components/PlayerVisualizer";
+import SpectrumVisualizer from "@/components/SpectrumVisualizer";
 
 const formatTime = (seconds: number) => {
   if (!Number.isFinite(seconds) || seconds < 0) return "0:00";
@@ -236,9 +236,13 @@ const FloatingPlayer = () => {
           <div className="h-full w-[200%] bg-gradient-to-r from-neon-cyan via-neon-magenta to-neon-cyan animate-marquee" />
         </div>
 
-        {/* Espectro em segundo plano (mais presente sob o progresso) */}
+        {/* Espectro em segundo plano — modo Ondas (linhas onduladas) */}
         <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-2xl">
-          <PlayerVisualizer className="absolute inset-0 h-full w-full" />
+          <SpectrumVisualizer
+            className="absolute inset-0 h-full w-full opacity-90"
+            mode="waves"
+            intensity={0.85}
+          />
           <div className="absolute inset-0 bg-gradient-to-b from-card/88 via-card/55 to-card/15" />
         </div>
 

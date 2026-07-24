@@ -51,11 +51,17 @@ const SpectrumVisualizer = ({ className, intensity = 1, mode = "bars" }: Props) 
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
     resize();
+    const observer = new ResizeObserver(resize);
+    observer.observe(canvas);
     window.addEventListener("resize", resize);
 
     const draw = () => {
       const w = canvas.clientWidth;
       const h = canvas.clientHeight;
+      if (w < 1 || h < 1) {
+        rafRef.current = requestAnimationFrame(draw);
+        return;
+      }
       phaseRef.current += isPlaying ? 0.018 : 0.008;
       ctx.clearRect(0, 0, w, h);
       ctx.globalAlpha = 1;
@@ -95,6 +101,7 @@ const SpectrumVisualizer = ({ className, intensity = 1, mode = "bars" }: Props) 
     draw();
 
     return () => {
+      observer.disconnect();
       window.removeEventListener("resize", resize);
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };

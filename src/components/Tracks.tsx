@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Heart, Pause, Play } from "lucide-react";
 import { useRadio } from "@/context/RadioContext";
 import CoverArt from "@/components/CoverArt";
+import SpectrumVisualizer from "@/components/SpectrumVisualizer";
 
 const formatTime = (seconds: number) => {
   if (!Number.isFinite(seconds) || seconds < 0) return "--:--";
@@ -172,7 +173,7 @@ const Tracks = () => {
                   )}
                 </button>
 
-                <div className="min-w-0 flex-1">
+                <div className={`min-w-0 ${active ? "w-[min(100%,14rem)] shrink-0 sm:w-[min(100%,18rem)]" : "flex-1"}`}>
                   <div
                     className={`truncate font-display text-base tracking-wider sm:text-lg ${
                       active ? "text-gradient-neon" : "text-foreground"
@@ -190,18 +191,18 @@ const Tracks = () => {
                   </div>
                 </div>
 
-                {active && isPlaying && (
-                  <div className="hidden items-end gap-[2px] sm:flex">
-                    {[0, 1, 2, 3].map((b) => (
-                      <span
-                        key={b}
-                        className="w-[3px] rounded-sm bg-neon-cyan"
-                        style={{
-                          height: "16px",
-                          animation: `equalize ${0.5 + b * 0.15}s ease-in-out ${b * 0.05}s infinite`,
-                        }}
-                      />
-                    ))}
+                {active && (
+                  <div
+                    className="relative hidden h-10 min-w-[6rem] flex-1 overflow-hidden rounded-lg sm:block"
+                    aria-hidden="true"
+                    title="Ondas — áudio ao vivo"
+                  >
+                    <SpectrumVisualizer
+                      className="absolute inset-0 h-full w-full opacity-90"
+                      mode="waves"
+                      intensity={0.95}
+                    />
+                    <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-card/50 via-transparent to-card/40" />
                   </div>
                 )}
 
