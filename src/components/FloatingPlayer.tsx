@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import {
   Heart,
   ListMusic,
@@ -52,7 +52,7 @@ const FloatingPlayer = () => {
   const [playlistTab, setPlaylistTab] = useState<PlaylistTab>("all");
   const [isSeeking, setIsSeeking] = useState(false);
   const playlistRef = useRef<HTMLDivElement>(null);
-  const progressBarRef = useRef<HTMLDivElement>(null);
+  const activeProgressBarRef = useRef<HTMLDivElement | null>(null);
   const seekingRef = useRef(false);
 
   const favorited = isFavorite(current.id);
@@ -117,9 +117,10 @@ const FloatingPlayer = () => {
 
   const seekFromClientX = (clientX: number) => {
     const audio = audioRef.current;
-    const bar = progressBarRef.current;
+    const bar = activeProgressBarRef.current;
     if (!audio || !bar || !audio.duration || !Number.isFinite(audio.duration)) return;
     const rect = bar.getBoundingClientRect();
+    if (rect.width <= 0) return;
     const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
     const nextTime = ratio * audio.duration;
     audio.currentTime = nextTime;
@@ -130,6 +131,16 @@ const FloatingPlayer = () => {
   const endSeek = () => {
     seekingRef.current = false;
     setIsSeeking(false);
+    activeProgressBarRef.current = null;
+  };
+
+  const startSeek = (event: ReactPointerEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    activeProgressBarRef.current = event.currentTarget;
+    seekingRef.current = true;
+    setIsSeeking(true);
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+    seekFromClientX(event.clientX);
   };
 
   useEffect(() => {
@@ -171,88 +182,119 @@ const FloatingPlayer = () => {
         }))
       : tracks.map((track, queueIndex) => ({ track, queueIndex }));
 
+  const progressBar = (
+    <div className="flex min-w-0 flex-1 items-center gap-1.5">
+      <span className="w-8 shrink-0 text-right font-mono text-[10px] tabular-nums text-neon-cyan/80">
+        {formatTime(currentTime)}
+      </span>
+      <div
+        role="slider"
+        aria-label="Progresso da música"
+        aria-valuemin={0}
+        aria-valuemax={Math.round(duration || 0)}
+        aria-valuenow={Math.round(currentTime)}
+        tabIndex={0}
+        className="group relative h-1.5 min-w-0 flex-1 cursor-pointer touch-none rounded-full bg-border/70"
+        onPointerDown={startSeek}
+        onKeyDown={(event) => {
+          const audio = audioRef.current;
+          if (!audio || !audio.duration) return;
+          if (event.key === "ArrowRight") {
+            audio.currentTime = Math.min(audio.duration, audio.currentTime + 5);
+          }
+          if (event.key === "ArrowLeft") {
+            audio.currentTime = Math.max(0, audio.currentTime - 5);
+          }
+        }}
+      >
+        <div
+          className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-neon-cyan to-neon-magenta"
+          style={{
+            width: `${progress}%`,
+            transition: isSeeking ? "none" : "width 150ms linear",
+          }}
+        />
+        <div
+          className="absolute top-1/2 h-3 w-3 -translate-y-1/2 rounded-full bg-foreground opacity-90 sm:opacity-0 sm:group-hover:opacity-100"
+          style={{ left: `calc(${progress}% - 6px)` }}
+        />
+      </div>
+      <span className="w-8 shrink-0 font-mono text-[10px] tabular-nums text-muted-foreground">
+        {formatTime(duration)}
+      </span>
+    </div>
+  );
+
   return (
     <div
       ref={playlistRef}
-      className="fixed bottom-3 left-1/2 z-50 w-[min(960px,calc(100vw-1.5rem))] -translate-x-1/2"
+      className="fixed bottom-3 left-1/2 z-50 w-[min(820px,calc(100vw-1.5rem))] -translate-x-1/2"
     >
       <div className="relative rounded-2xl border border-neon-cyan/30 bg-card/80 backdrop-blur-xl shadow-[0_0_30px_-5px_hsl(var(--neon-magenta)/0.5)]">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-[2px] overflow-hidden rounded-t-2xl">
           <div className="h-full w-[200%] bg-gradient-to-r from-neon-cyan via-neon-magenta to-neon-cyan animate-marquee" />
         </div>
 
-        <div className="flex flex-col gap-2.5 px-3 py-2.5 sm:gap-3 sm:px-5 sm:py-3">
-          {/* Linha 1: capa + título (máximo de espaço para o nome) */}
-          <div className="flex min-w-0 items-center gap-3">
-            <CoverArt
-              src={getCover(current.id)}
-              alt={`Capa de ${current.title}`}
-              size="md"
-              className={isPlaying ? "ring-1 ring-neon-magenta/50" : ""}
-            />
+        {/* Esquerda: capa+título | Centro: timer | Direita: controles */}
+        <div className="flex items-center gap-2 px-2.5 py-2 sm:gap-3 sm:px-3">
+          <CoverArt
+            src={getCover(current.id)}
+            alt={`Capa de ${current.title}`}
+            size="sm"
+            className={`h-10 w-10 sm:h-11 sm:w-11 ${isPlaying ? "ring-1 ring-neon-magenta/50" : ""}`}
+          />
 
-            <div className="min-w-0 flex-1 overflow-hidden">
-              <div className="mb-0.5 flex items-center gap-2">
-                <span className="relative flex h-1.5 w-1.5 shrink-0">
-                  <span
-                    className={`absolute inline-flex h-full w-full rounded-full bg-neon-magenta opacity-75 ${
-                      radioOn ? "animate-ping" : ""
-                    }`}
-                  />
-                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-neon-magenta" />
-                </span>
-                <span className="truncate text-[9px] font-semibold uppercase tracking-[0.28em] text-neon-magenta/90">
-                  {radioOn ? "Ao vivo" : "Rádio"} · Faixa {currentIndex + 1}/{tracks.length}
-                </span>
-              </div>
-
-              <MarqueeText
-                text={current.title}
-                className="font-display text-lg tracking-wider text-foreground drop-shadow-[0_0_12px_hsl(var(--neon-cyan)/0.25)] sm:text-xl"
+          <div className="min-w-0 w-[7.5rem] shrink-0 overflow-hidden sm:w-[11rem] md:w-[13rem]">
+            <div className="flex items-center gap-1">
+              <span
+                className={`h-1.5 w-1.5 shrink-0 rounded-full bg-neon-magenta ${
+                  radioOn ? "animate-pulse" : "opacity-50"
+                }`}
               />
-
-              <div className="mt-0.5 truncate text-[11px] text-muted-foreground sm:text-xs">
-                {current.artist}
-              </div>
+              <span className="truncate text-[9px] uppercase tracking-[0.18em] text-neon-magenta/80">
+                {radioOn ? "Ao vivo" : "Rádio"} · {currentIndex + 1}/{tracks.length}
+              </span>
             </div>
+            <MarqueeText
+              text={current.title}
+              className="font-display text-sm tracking-wider text-foreground sm:text-base"
+            />
+            <div className="truncate text-[10px] text-muted-foreground">{current.artist}</div>
           </div>
 
-          {/* Linha 2: controles — título não compete por espaço */}
-          <div className="flex items-center justify-between gap-1 sm:justify-end sm:gap-2">
+          <div className="hidden min-w-0 flex-1 md:flex">{progressBar}</div>
+
+          <div className="flex shrink-0 items-center gap-0.5">
             <Button
               size="icon"
               variant="ghost"
               onClick={() => toggleFavorite(current.id)}
-              className={`h-9 w-9 hover:bg-neon-magenta/10 ${
+              className={`h-8 w-8 ${
                 favorited ? "text-neon-magenta" : "text-foreground/80 hover:text-neon-magenta"
               }`}
               aria-label={favorited ? "Remover da Minha seleção" : "Adicionar à Minha seleção"}
-              title={favorited ? "Remover da Minha seleção" : "Adicionar à Minha seleção"}
             >
-              <Heart className={`h-4 w-4 ${favorited ? "fill-current" : ""}`} />
+              <Heart className={`h-3.5 w-3.5 ${favorited ? "fill-current" : ""}`} />
             </Button>
 
-            <div>
+            <div className="relative">
               <Button
                 size="icon"
                 variant="ghost"
                 onClick={() => setPlaylistOpen((open) => !open)}
-                className={`h-9 w-9 hover:bg-neon-cyan/10 hover:text-neon-cyan ${
-                  playlistOpen ? "bg-neon-cyan/10 text-neon-cyan" : "text-foreground/80"
+                className={`h-8 w-8 ${
+                  playlistOpen ? "bg-neon-cyan/10 text-neon-cyan" : "text-foreground/80 hover:text-neon-cyan"
                 }`}
                 aria-label="Selecionar faixa"
-                aria-haspopup="menu"
                 aria-expanded={playlistOpen}
-                title="Selecionar faixa"
               >
-                <ListMusic className="h-4 w-4" />
+                <ListMusic className="h-3.5 w-3.5" />
               </Button>
 
               {playlistOpen && (
                 <div
                   role="menu"
-                  aria-label="Lista de faixas"
-                  className="absolute bottom-[calc(100%+0.65rem)] left-1/2 z-50 w-[calc(100%-1rem)] max-w-80 -translate-x-1/2 overflow-hidden rounded-2xl border border-neon-cyan/30 bg-card/95 shadow-[0_0_35px_hsl(var(--neon-cyan)/0.2)] backdrop-blur-xl sm:left-auto sm:right-4 sm:w-80 sm:translate-x-0"
+                  className="absolute bottom-[calc(100%+0.55rem)] right-0 z-50 w-[min(20rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-neon-cyan/30 bg-card/95 shadow-[0_0_35px_hsl(var(--neon-cyan)/0.2)] backdrop-blur-xl sm:w-80"
                 >
                   <div className="border-b border-border/60 px-3 pt-2">
                     <div className="pb-2 text-[9px] font-semibold uppercase tracking-[0.28em] text-neon-cyan/70">
@@ -262,10 +304,10 @@ const FloatingPlayer = () => {
                       <button
                         type="button"
                         onClick={() => setPlaylistTab("all")}
-                        className={`rounded-lg px-2 py-1.5 text-[10px] uppercase tracking-widest transition-colors ${
+                        className={`rounded-lg px-2 py-1.5 text-[10px] uppercase tracking-widest ${
                           playlistTab === "all"
                             ? "bg-neon-cyan/15 text-neon-cyan"
-                            : "text-muted-foreground hover:text-foreground"
+                            : "text-muted-foreground"
                         }`}
                       >
                         Todas ({tracks.length})
@@ -273,23 +315,20 @@ const FloatingPlayer = () => {
                       <button
                         type="button"
                         onClick={() => setPlaylistTab("selection")}
-                        className={`rounded-lg px-2 py-1.5 text-[10px] uppercase tracking-widest transition-colors ${
+                        className={`rounded-lg px-2 py-1.5 text-[10px] uppercase tracking-widest ${
                           playlistTab === "selection"
                             ? "bg-neon-magenta/15 text-neon-magenta"
-                            : "text-muted-foreground hover:text-foreground"
+                            : "text-muted-foreground"
                         }`}
                       >
                         Minha ({selectionTracks.length})
                       </button>
                     </div>
                   </div>
-
-                  <ul className="max-h-[11rem] overflow-y-auto overscroll-contain p-1.5 [scrollbar-width:thin]">
+                  <ul className="max-h-[11rem] overflow-y-auto p-1.5 [scrollbar-width:thin]">
                     {visibleTracks.length === 0 && (
                       <li className="px-3 py-6 text-center text-[11px] text-muted-foreground">
                         Nenhuma faixa na Minha seleção.
-                        <br />
-                        Toque no ♥ para adicionar.
                       </li>
                     )}
                     {visibleTracks.map(({ track, queueIndex }) => {
@@ -297,72 +336,42 @@ const FloatingPlayer = () => {
                       return (
                         <li key={track.id}>
                           <div
-                            className={`flex w-full items-center gap-2 rounded-xl px-2 py-1.5 transition-colors ${
-                              active
-                                ? "bg-neon-magenta/15 text-foreground"
-                                : "text-muted-foreground hover:bg-neon-cyan/10 hover:text-foreground"
+                            className={`flex items-center gap-2 rounded-xl px-2 py-1.5 ${
+                              active ? "bg-neon-magenta/15" : "hover:bg-neon-cyan/10"
                             }`}
                           >
                             <button
                               type="button"
-                              role="menuitemradio"
-                              aria-checked={active}
                               onClick={() =>
                                 playlistTab === "selection"
                                   ? pickSelectionTrack(track.id)
                                   : pickTrack(queueIndex)
                               }
-                              className="flex min-w-0 flex-1 items-center gap-3 rounded-lg px-1 py-1 text-left"
+                              className="flex min-w-0 flex-1 items-center gap-2 text-left"
                             >
-                              <CoverArt
-                                src={getCover(track.id)}
-                                alt={`Capa de ${track.title}`}
-                                size="sm"
-                                className={active ? "ring-1 ring-neon-magenta/60" : ""}
-                              />
+                              <CoverArt src={getCover(track.id)} alt="" size="sm" />
                               <span className="min-w-0 flex-1">
                                 <span
                                   className={`block truncate text-sm font-display tracking-wider ${
-                                    active ? "text-gradient-neon" : ""
+                                    active ? "text-gradient-neon" : "text-foreground"
                                   }`}
                                 >
                                   {track.title}
                                 </span>
-                                <span className="block truncate text-[10px] uppercase tracking-widest text-muted-foreground">
+                                <span className="block truncate text-[10px] text-muted-foreground">
                                   {track.artist}
                                 </span>
                               </span>
-                              {active && isPlaying && (
-                                <span className="flex items-end gap-[2px]">
-                                  {[0, 1, 2].map((bar) => (
-                                    <span
-                                      key={bar}
-                                      className="w-[2px] rounded-sm bg-neon-cyan"
-                                      style={{
-                                        height: "12px",
-                                        animation: `equalize ${0.5 + bar * 0.15}s ease-in-out ${bar * 0.05}s infinite`,
-                                      }}
-                                    />
-                                  ))}
-                                </span>
-                              )}
                             </button>
                             <button
                               type="button"
-                              onClick={(event) => {
-                                event.stopPropagation();
+                              onClick={(e) => {
+                                e.stopPropagation();
                                 toggleFavorite(track.id);
                               }}
-                              className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors ${
-                                isFavorite(track.id)
-                                  ? "text-neon-magenta"
-                                  : "text-muted-foreground hover:text-neon-magenta"
+                              className={`flex h-8 w-8 items-center justify-center ${
+                                isFavorite(track.id) ? "text-neon-magenta" : "text-muted-foreground"
                               }`}
-                              aria-label={
-                                isFavorite(track.id)
-                                  ? `Remover ${track.title} da seleção`
-                                  : `Adicionar ${track.title} à seleção`
-                              }
                             >
                               <Heart className={`h-3.5 w-3.5 ${isFavorite(track.id) ? "fill-current" : ""}`} />
                             </button>
@@ -375,123 +384,68 @@ const FloatingPlayer = () => {
               )}
             </div>
 
-            <div className="flex flex-1 items-center justify-center gap-1 sm:flex-none sm:gap-2">
-              <Button
-                size="icon"
-                variant="ghost"
-                onClick={prev}
-                className="h-9 w-9 text-foreground/80 hover:bg-neon-cyan/10 hover:text-neon-cyan"
-                aria-label="Anterior"
-              >
-                <SkipBack className="h-4 w-4" />
-              </Button>
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={prev}
+              className="h-8 w-8 text-foreground/80 hover:text-neon-cyan"
+              aria-label="Anterior"
+            >
+              <SkipBack className="h-3.5 w-3.5" />
+            </Button>
 
-              <button
-                onClick={togglePlay}
-                aria-label={isPlaying ? "Pausar rádio" : "Tocar rádio"}
-                className="group relative flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-neon-cyan to-neon-magenta text-background shadow-[0_0_20px_hsl(var(--neon-magenta)/0.6)] transition-transform hover:scale-105 active:scale-95"
-              >
-                <span className="absolute inset-0 rounded-full bg-gradient-to-br from-neon-cyan to-neon-magenta opacity-0 blur-md transition-opacity group-hover:opacity-80" />
-                {isPlaying ? (
-                  <Pause className="relative h-5 w-5" fill="currentColor" />
-                ) : (
-                  <Play className="relative h-5 w-5 translate-x-[1px]" fill="currentColor" />
-                )}
-              </button>
+            <button
+              onClick={togglePlay}
+              aria-label={isPlaying ? "Pausar" : "Tocar"}
+              className="mx-0.5 flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-neon-cyan to-neon-magenta text-background shadow-[0_0_18px_hsl(var(--neon-magenta)/0.55)] sm:h-10 sm:w-10"
+            >
+              {isPlaying ? (
+                <Pause className="h-4 w-4" fill="currentColor" />
+              ) : (
+                <Play className="h-4 w-4 translate-x-[1px]" fill="currentColor" />
+              )}
+            </button>
 
-              <Button
-                size="icon"
-                variant="ghost"
-                onClick={next}
-                className="h-9 w-9 text-foreground/80 hover:bg-neon-magenta/10 hover:text-neon-magenta"
-                aria-label="Próxima"
-              >
-                <SkipForward className="h-4 w-4" />
-              </Button>
-            </div>
-
-            <div className="hidden items-center gap-2 sm:flex">
-              <Button
-                size="icon"
-                variant="ghost"
-                onClick={() => setMuted((m) => !m)}
-                className="h-9 w-9 text-foreground/80 hover:bg-neon-cyan/10 hover:text-neon-cyan"
-                aria-label={muted ? "Ativar som" : "Silenciar"}
-              >
-                {muted || volume === 0 ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-              </Button>
-              <Slider
-                value={[muted ? 0 : volume * 100]}
-                onValueChange={(v) => {
-                  setMuted(false);
-                  setVolume(v[0] / 100);
-                }}
-                max={100}
-                step={1}
-                className="w-24"
-                aria-label="Volume"
-              />
-            </div>
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={next}
+              className="h-8 w-8 text-foreground/80 hover:text-neon-magenta"
+              aria-label="Próxima"
+            >
+              <SkipForward className="h-3.5 w-3.5" />
+            </Button>
 
             <Button
               size="icon"
               variant="ghost"
               onClick={() => setMuted((m) => !m)}
-              className="h-9 w-9 text-foreground/80 hover:bg-neon-cyan/10 hover:text-neon-cyan sm:hidden"
+              className="h-8 w-8 text-foreground/80 hover:text-neon-cyan"
               aria-label={muted ? "Ativar som" : "Silenciar"}
             >
-              {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+              {muted || volume === 0 ? (
+                <VolumeX className="h-3.5 w-3.5" />
+              ) : (
+                <Volume2 className="h-3.5 w-3.5" />
+              )}
             </Button>
-          </div>
-        </div>
 
-        <div className="px-3 pb-3 sm:px-5">
-          <div
-            ref={progressBarRef}
-            role="slider"
-            aria-label="Progresso da música"
-            aria-valuemin={0}
-            aria-valuemax={Math.round(duration || 0)}
-            aria-valuenow={Math.round(currentTime)}
-            aria-valuetext={`${formatTime(currentTime)} de ${formatTime(duration)}`}
-            tabIndex={0}
-            className="group relative h-2 cursor-pointer touch-none rounded-full bg-border/70 sm:h-1.5"
-            onPointerDown={(event) => {
-              event.preventDefault();
-              seekingRef.current = true;
-              setIsSeeking(true);
-              progressBarRef.current?.setPointerCapture?.(event.pointerId);
-              seekFromClientX(event.clientX);
-            }}
-            onKeyDown={(event) => {
-              const audio = audioRef.current;
-              if (!audio || !audio.duration) return;
-              if (event.key === "ArrowRight") {
-                audio.currentTime = Math.min(audio.duration, audio.currentTime + 5);
-              }
-              if (event.key === "ArrowLeft") {
-                audio.currentTime = Math.max(0, audio.currentTime - 5);
-              }
-            }}
-          >
-            <div
-              className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-neon-cyan to-neon-magenta shadow-[0_0_12px_hsl(var(--neon-magenta)/0.55)]"
-              style={{
-                width: `${progress}%`,
-                transition: isSeeking ? "none" : "width 150ms linear",
+            <Slider
+              value={[muted ? 0 : volume * 100]}
+              onValueChange={(v) => {
+                setMuted(false);
+                setVolume(v[0] / 100);
               }}
+              max={100}
+              step={1}
+              className="hidden w-16 lg:flex"
+              aria-label="Volume"
             />
-            <div
-              className="absolute top-1/2 h-3.5 w-3.5 -translate-y-1/2 rounded-full bg-foreground opacity-90 shadow-[0_0_10px_hsl(var(--neon-cyan)/0.8)] sm:h-3 sm:w-3 sm:opacity-0 sm:group-hover:opacity-100"
-              style={{ left: `calc(${progress}% - 7px)` }}
-            />
-          </div>
-
-          <div className="mt-1.5 flex items-center justify-between font-mono text-[10px] tracking-wider text-muted-foreground">
-            <span className="text-neon-cyan/80">{formatTime(currentTime)}</span>
-            <span>{formatTime(duration)}</span>
           </div>
         </div>
+
+        {/* No mobile/tablet a barra fica abaixo (no desktop já está no meio) */}
+        <div className="flex px-2.5 pb-2 md:hidden">{progressBar}</div>
       </div>
     </div>
   );
