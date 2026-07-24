@@ -181,41 +181,44 @@ const FloatingPlayer = () => {
           <div className="h-full w-[200%] bg-gradient-to-r from-neon-cyan via-neon-magenta to-neon-cyan animate-marquee" />
         </div>
 
-        <div className="flex items-center gap-2 px-3 py-2.5 sm:gap-4 sm:px-5 sm:py-3">
-          <CoverArt
-            src={getCover(current.id)}
-            alt={`Capa de ${current.title}`}
-            size="md"
-            className={isPlaying ? "ring-1 ring-neon-magenta/50" : ""}
-          />
+        <div className="flex flex-col gap-2.5 px-3 py-2.5 sm:gap-3 sm:px-5 sm:py-3">
+          {/* Linha 1: capa + título (máximo de espaço para o nome) */}
+          <div className="flex min-w-0 items-center gap-3">
+            <CoverArt
+              src={getCover(current.id)}
+              alt={`Capa de ${current.title}`}
+              size="md"
+              className={isPlaying ? "ring-1 ring-neon-magenta/50" : ""}
+            />
 
-          <div className="hidden items-center gap-2 rounded-full border border-neon-magenta/50 bg-neon-magenta/10 px-3 py-1 sm:flex">
-            <span className="relative flex h-2 w-2">
-              <span className={`absolute inline-flex h-full w-full rounded-full bg-neon-magenta opacity-75 ${radioOn ? "animate-ping" : ""}`} />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-neon-magenta" />
-            </span>
-            <span className="font-display text-xs tracking-widest text-neon-magenta">
-              {radioOn ? "AO VIVO" : "RÁDIO"}
-            </span>
-          </div>
+            <div className="min-w-0 flex-1 overflow-hidden">
+              <div className="mb-0.5 flex items-center gap-2">
+                <span className="relative flex h-1.5 w-1.5 shrink-0">
+                  <span
+                    className={`absolute inline-flex h-full w-full rounded-full bg-neon-magenta opacity-75 ${
+                      radioOn ? "animate-ping" : ""
+                    }`}
+                  />
+                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-neon-magenta" />
+                </span>
+                <span className="truncate text-[9px] font-semibold uppercase tracking-[0.28em] text-neon-magenta/90">
+                  {radioOn ? "Ao vivo" : "Rádio"} · Faixa {currentIndex + 1}/{tracks.length}
+                </span>
+              </div>
 
-          <div className="min-w-0 flex-1 overflow-hidden">
-            <div className="flex min-w-0 items-baseline gap-2">
               <MarqueeText
                 text={current.title}
-                className="font-display text-base tracking-wider text-foreground sm:text-lg"
+                className="font-display text-lg tracking-wider text-foreground drop-shadow-[0_0_12px_hsl(var(--neon-cyan)/0.25)] sm:text-xl"
               />
-              <span className="hidden shrink-0 truncate text-xs text-muted-foreground sm:inline">
-                — {current.artist}
-              </span>
-            </div>
-            <div className="text-[10px] uppercase tracking-[0.3em] text-neon-cyan/70">
-              Faixa {currentIndex + 1} / {tracks.length}
-              {radioOn ? " · Loop rádio" : ""}
+
+              <div className="mt-0.5 truncate text-[11px] text-muted-foreground sm:text-xs">
+                {current.artist}
+              </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-0.5 sm:gap-2">
+          {/* Linha 2: controles — título não compete por espaço */}
+          <div className="flex items-center justify-between gap-1 sm:justify-end sm:gap-2">
             <Button
               size="icon"
               variant="ghost"
@@ -372,40 +375,42 @@ const FloatingPlayer = () => {
               )}
             </div>
 
-            <Button
-              size="icon"
-              variant="ghost"
-              onClick={prev}
-              className="h-9 w-9 text-foreground/80 hover:bg-neon-cyan/10 hover:text-neon-cyan"
-              aria-label="Anterior"
-            >
-              <SkipBack className="h-4 w-4" />
-            </Button>
+            <div className="flex flex-1 items-center justify-center gap-1 sm:flex-none sm:gap-2">
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={prev}
+                className="h-9 w-9 text-foreground/80 hover:bg-neon-cyan/10 hover:text-neon-cyan"
+                aria-label="Anterior"
+              >
+                <SkipBack className="h-4 w-4" />
+              </Button>
 
-            <button
-              onClick={togglePlay}
-              aria-label={isPlaying ? "Pausar rádio" : "Tocar rádio"}
-              className="group relative flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-neon-cyan to-neon-magenta text-background shadow-[0_0_20px_hsl(var(--neon-magenta)/0.6)] transition-transform hover:scale-105 active:scale-95"
-            >
-              <span className="absolute inset-0 rounded-full bg-gradient-to-br from-neon-cyan to-neon-magenta opacity-0 blur-md transition-opacity group-hover:opacity-80" />
-              {isPlaying ? (
-                <Pause className="relative h-5 w-5" fill="currentColor" />
-              ) : (
-                <Play className="relative h-5 w-5 translate-x-[1px]" fill="currentColor" />
-              )}
-            </button>
+              <button
+                onClick={togglePlay}
+                aria-label={isPlaying ? "Pausar rádio" : "Tocar rádio"}
+                className="group relative flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-neon-cyan to-neon-magenta text-background shadow-[0_0_20px_hsl(var(--neon-magenta)/0.6)] transition-transform hover:scale-105 active:scale-95"
+              >
+                <span className="absolute inset-0 rounded-full bg-gradient-to-br from-neon-cyan to-neon-magenta opacity-0 blur-md transition-opacity group-hover:opacity-80" />
+                {isPlaying ? (
+                  <Pause className="relative h-5 w-5" fill="currentColor" />
+                ) : (
+                  <Play className="relative h-5 w-5 translate-x-[1px]" fill="currentColor" />
+                )}
+              </button>
 
-            <Button
-              size="icon"
-              variant="ghost"
-              onClick={next}
-              className="h-9 w-9 text-foreground/80 hover:bg-neon-magenta/10 hover:text-neon-magenta"
-              aria-label="Próxima"
-            >
-              <SkipForward className="h-4 w-4" />
-            </Button>
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={next}
+                className="h-9 w-9 text-foreground/80 hover:bg-neon-magenta/10 hover:text-neon-magenta"
+                aria-label="Próxima"
+              >
+                <SkipForward className="h-4 w-4" />
+              </Button>
+            </div>
 
-            <div className="ml-1 hidden items-center gap-2 sm:flex">
+            <div className="hidden items-center gap-2 sm:flex">
               <Button
                 size="icon"
                 variant="ghost"

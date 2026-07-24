@@ -28,6 +28,7 @@ const CATALOG: Track[] = [
   track("Follow the Sound Instrumental.mp3", "Follow the Sound (Instrumental)"),
   track("Little Girl - Tonelada Eletrica.mp3", "Little Girl"),
   track("Meu_Violao.mp3", "Meu Violão"),
+  track("Mina Gasolina - Sistema Nervoso.mp3", "Mina Gasolina — Sistema Nervoso"),
   track("Murmur of Brasswood.mp3", "Murmur of Brasswood"),
   track("No compasso da onda.mp3", "No Compasso da Onda"),
   track("Rolling Groove.mp3", "Rolling Groove"),
@@ -38,6 +39,7 @@ const CATALOG: Track[] = [
   track("Sweet guitar.mp3", "Sweet Guitar"),
   track("Tempo Espaço -Tonelada Elétrica.mp3", "Tempo Espaço"),
   track("Uma Tonelada.mp3", "Uma Tonelada"),
+  track("Which Sheila.mp3", "Which Sheila"),
 ];
 
 const SELECTION_STORAGE_KEY = "tonelada-selection";
