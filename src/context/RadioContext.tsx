@@ -24,23 +24,29 @@ const track = (filename: string, title: string, artist = "Tonelada Elétrica"): 
 
 // Catálogo base — numeração e ordem vêm da ordenação alfabética abaixo
 const CATALOG_RAW: Omit<Track, "number">[] = [
-  track("A Cidade Pulsa no Escuro.mp3", "A Cidade Pulsa no Escuro"),
+  track("Acústico.mp3", "Acústico"),
   track("Atak_2026_Extend_1.mp3", "Atak 2026 (Extend)"),
   track("Ataque  - Tonelada Elétrica V1.mp3", "Ataque — Tonelada Elétrica V1"),
+  track("Cognitive Recalibration - @lewis.floyd.henry.mp3", "Cognitive Recalibration", "Lewis Floyd Henry"),
+  track("Com a Corda no Pescoço.mp3", "Com a Corda no Pescoço"),
+  track("Eu sei a hora de chegar.mp3", "Eu Sei a Hora de Chegar"),
   track("Follow the Sound Instrumental.mp3", "Follow the Sound (Instrumental)"),
+  track("Follow the Sound.mp3", "Follow the Sound"),
   track("Little Girl - Tonelada Eletrica.mp3", "Little Girl"),
   track("Meu_Violao.mp3", "Meu Violão"),
   track("Mina Gasolina - Sistema Nervoso.mp3", "Mina Gasolina — Sistema Nervoso"),
   track("Murmur of Brasswood.mp3", "Murmur of Brasswood"),
+  track("Na onda dela.mp3", "Na Onda Dela"),
   track("No compasso da onda.mp3", "No Compasso da Onda"),
   track("Rolling Groove.mp3", "Rolling Groove"),
   track("Rolling Thunder Vol2.mp3", "Rolling Thunder Vol. 2"),
   track("Ruas Vazias (Cover).mp3", "Ruas Vazias (Cover)"),
+  track("Sem tempo de voltar.mp3", "Sem Tempo de Voltar"),
+  track("sheila acústico ingles.mp3", "Sheila Acústico (Inglês)"),
   track("Sinta o Groove.mp3", "Sinta o Groove"),
-  track("Som Reagge v1 instrumental.mp3", "Som Reggae v1 (Instrumental)"),
   track("Sweet guitar.mp3", "Sweet Guitar"),
   track("Tempo Espaço -Tonelada Elétrica.mp3", "Tempo Espaço"),
-  track("Uma Tonelada.mp3", "Uma Tonelada"),
+  track("Times Over.mp3", "Times Over"),
   track("Which Sheila.mp3", "Which Sheila"),
 ];
 
