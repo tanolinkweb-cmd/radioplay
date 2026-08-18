@@ -31,7 +31,6 @@ const CATALOG_RAW: Omit<Track, "number">[] = [
   track("Ataque  - Tonelada Elétrica V1.mp3", "Ataque — Tonelada Elétrica V1"),
   track("Com a Corda no Pescoço.mp3", "Com a Corda no Pescoço"),
   track("Eu sei a hora de chegar.mp3", "Eu Sei a Hora de Chegar"),
-  track("Follow the Sound Instrumental.mp3", "Follow the Sound (Instrumental)"),
   track("Follow the Sound.mp3", "Follow the Sound"),
   track("Instrumental Elétrica.mp3", "Instrumental Elétrica"),
   track("Little Girl - Tonelada Eletrica.mp3", "Little Girl"),
