@@ -1,0 +1,41 @@
+---
+description: Contas, Git deploy key e Vercel do RadioPlay — consultar SEMPRE
+alwaysApply: true
+---
+
+# RadioPlay Tonelada Elétrica — mapa permanente
+
+## Contas
+
+| Peça | Valor |
+|------|--------|
+| GitHub owner / repo | `tanolinkweb-cmd` / `radioplay` |
+| Repo URL | https://github.com/tanolinkweb-cmd/radioplay |
+| Admin e-mail | `tanolinkweb@gmail.com` |
+| Vercel team / projeto | `tano-link` / https://vercel.com/tano-link/radioplay |
+| Domínio | https://radioplay.tanolink.com.br |
+| Vercel app | https://radioplay-kohl.vercel.app |
+| Dev MagicPage (Chrome) | `magicpageweb` / `magicpageluis` — **não** usar no push deste repo |
+
+## Git permanente (já resolvido — NÃO quebrar)
+
+- Remote `origin`: `git@github-tanolink:tanolinkweb-cmd/radioplay.git`
+- SSH Host alias: `github-tanolink` → `github.com` com `IdentityFile ~/.ssh/tanolink_radioplay` e `IdentitiesOnly yes`
+- Chave privada: `C:\Users\Jupter\.ssh\tanolink_radioplay`
+- Chave pública: `...\tanolink_radioplay.pub`
+- Deploy key no GitHub: título **`tanolinkwebcursor`** · **Allow write access** ligado
+- Teste OK: `ssh -T git@github-tanolink` → `Hi tanolinkweb-cmd/radioplay!`
+- Push OK comprovado: `110c2b2..19aacf9` em `main` (31 faixas)
+
+## Como publicar (sempre)
+
+1. Commit local
+2. `git push origin main` (usa a deploy key; Vercel atualiza sozinha)
+3. Se o remote voltar para `git@github.com:...`, restaurar para `git@github-tanolink:tanolinkweb-cmd/radioplay.git`
+
+## Alertas obrigatórios
+
+- Push como `magicpageluis` / `magicpageweb` → remote ou chave errada; corrigir para `github-tanolink`.
+- Local ahead e site desatualizado → falta push.
+- Contar faixas locais vs “Todas (N)” no site ao falar de setlist.
+- Nunca commitar `.env.deploy` nem chaves privadas.

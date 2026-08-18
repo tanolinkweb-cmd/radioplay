@@ -29,8 +29,6 @@ const CATALOG_RAW: Omit<Track, "number">[] = [
   track("Alucination Cover V2.mp3", "Alucination Cover V2"),
   track("Atak_2026_Extend_1.mp3", "Atak 2026 (Extend)"),
   track("Ataque  - Tonelada Elétrica V1.mp3", "Ataque — Tonelada Elétrica V1"),
-  track("Caido a beira do Caminho - Lewis Floyd Henry.mp3", "Caído à Beira do Caminho", "Lewis Floyd Henry"),
-  track("Cognitive Recalibration - @lewis.floyd.henry.mp3", "Cognitive Recalibration", "Lewis Floyd Henry"),
   track("Com a Corda no Pescoço.mp3", "Com a Corda no Pescoço"),
   track("Eu sei a hora de chegar.mp3", "Eu Sei a Hora de Chegar"),
   track("Follow the Sound Instrumental.mp3", "Follow the Sound (Instrumental)"),
